@@ -1,1 +1,0 @@
-packageSearchIndex = [{"l":"All Packages","u":"allpackages-index.html"},{"l":"simulator"},{"l":"simulator.config"},{"l":"simulator.core"},{"l":"simulator.io"},{"l":"simulator.model"}];updateSearchResults();
