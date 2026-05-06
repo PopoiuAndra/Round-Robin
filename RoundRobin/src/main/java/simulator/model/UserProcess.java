@@ -1,45 +1,45 @@
 package simulator.model;
 
 /**
- * Reprezinta un proces lansat de un utilizator in cadrul sistemului.
- * Spre deosebire de un proces de sistem, un UserProcess este definit de un timp
- * de lansare (release time) si o secventa de executie alternanta formata din
- * intervale de procesare (CPU) si apeluri de sistem (I/O).
+ * Represents a process launched by a user within the system.
+ * Unlike a system process, a UserProcess is defined by a release time
+ * and an alternating execution sequence consisting of processing intervals (CPU)
+ * and system calls (I/O).
  */
 public class UserProcess extends Process {
 
-    /** Timpul de la inceputul simularii la care procesul este eliberat in sistem. */
+    /** The time from the start of the simulation at which the process is released into the system. */
     private final int releaseTime;
 
-    /** * Secventa de intervale de executie si apeluri de sistem.
-     * Indicii pari (0, 2, 4...) reprezinta intervale de executie pe procesor (CPU bursts).
-     * Indicii impari (1, 3, 5...) reprezinta timpii necesari pentru apelurile de sistem (I/O bursts).
+    /** * The sequence of execution intervals and system calls.
+     * Even indices (0, 2, 4...) represent processor execution intervals (CPU bursts).
+     * Odd indices (1, 3, 5...) represent times required for system calls (I/O bursts).
      */
     private final int[] executionSequence;
 
-    /** Indexul curent din vectorul executionSequence. */
+    /** Current index within the executionSequence array. */
     private int currentSequenceIndex = 0;
 
-    /** Timpul (in tick-uri) ramas din intervalul curent de procesare sau apel de sistem. */
+    /** Time (in ticks) remaining in the current processing interval or system call. */
     private int remainingTicksInCurrentBurst;
 
-    /** Indicator care arata daca procesul executa in prezent un apel de sistem (I/O) sau procesare normala. */
+    /** Indicator showing whether the process is currently performing a system call (I/O) or normal processing. */
     private boolean isCurrentlyDoingIo = false;
 
     /**
-     * Construieste un nou proces de utilizator pe baza datelor citite din fisier.
+     * Constructs a new user process based on data read from the file.
      *
-     * @param id          Identificatorul unic al procesului.
-     * @param memory      Memoria RAM (in MB) necesara.
-     * @param releaseTime Timpul (tick-ul) la care procesul apare in sistem.
-     * @param sequence    Vectorul cu secventa alternanta de durate (CPU, IO, CPU...).
+     * @param id          Unique identifier of the process.
+     * @param memory      RAM memory required (in MB).
+     * @param releaseTime The time (tick) when the process appears in the system.
+     * @param sequence    Array with the alternating duration sequence (CPU, IO, CPU...).
      */
     public UserProcess(int id, int memory, int releaseTime, int[] sequence) {
         super(id, memory);
         this.releaseTime = releaseTime;
         this.executionSequence = sequence;
 
-        // Initializam timpul ramas cu prima valoare din secventa (daca exista)
+        // Initialize remaining time with the first value in the sequence (if it exists)
         if (sequence != null && sequence.length > 0) {
             this.remainingTicksInCurrentBurst = sequence[0];
         } else {
@@ -48,71 +48,73 @@ public class UserProcess extends Process {
     }
 
     /**
-     * Returneaza timpul la care procesul este eliberat (introdus) in sistem.
+     * Returns the time at which the process is released (introduced) into the system.
      *
-     * @return Momentul lansarii (release time).
+     * @return Release time.
      */
     public int getReleaseTime() {
         return releaseTime;
     }
 
     /**
-     * Verifica daca stadiul curent al procesului este un apel de sistem.
-     * Aceasta informatie ajuta planificatorul (Scheduler) sa stie daca procesul
-     * trebuie scos de pe procesor si preluat de procesul de sistem.
+     * Checks if the current stage of the process is a system call.
+     * This information helps the Scheduler know if the process
+     * needs to be removed from the processor and handled by the system process.
      *
-     * @return true daca procesul asteapta/executa I/O, false daca necesita CPU.
+     * @return true if the process is waiting/executing I/O, false if it requires CPU.
      */
     public boolean isCurrentlyDoingIo() {
         return isCurrentlyDoingIo;
     }
 
     /**
-     * Executa o unitate de timp (un tick) din intervalul curent al procesului.
-     * Functia actualizeaza manual starea si trece la urmatorul interval din vector
-     * atunci cand timpul curent ajunge la 0. Daca vectorul se termina, procesul trece in starea TERMINATED.
+     * Executes one time unit (one tick) of the process's current interval.
+     * The function manually updates the state and moves to the next interval in the array
+     * when the current time reaches 0. If the array ends, the process transitions to TERMINATED.
      *
-     * @param currentTime Timpul global curent al simularii.
+     * @param currentTime Current global simulation time.
      */
     @Override
     public void executeTick(int currentTime) {
-        // Daca am depasit deja secventa, procesul este terminat
-        if (currentSequenceIndex >= executionSequence.length) {
+        // If we have already exceeded the sequence, the process is terminated
+        if (executionSequence == null || currentSequenceIndex >= executionSequence.length) {
             if (this.currentState != ProcessState.TERMINATED) {
                 this.setState(ProcessState.TERMINATED);
             }
             return;
         }
 
-        // Scadem un tick din intervalul curent
+        // Subtract one tick from the current interval
         remainingTicksInCurrentBurst--;
 
-        // Verificam daca intervalul curent a ajuns la final
+        // Check if the current interval has reached the end
         if (remainingTicksInCurrentBurst <= 0) {
             currentSequenceIndex++;
 
-            // Daca mai avem elemente in secventa, trecem la urmatorul interval
+            // If there are more elements in the sequence, move to the next interval
             if (currentSequenceIndex < executionSequence.length) {
                 remainingTicksInCurrentBurst = executionSequence[currentSequenceIndex];
 
-                // Alternam intre executie CPU si apel de sistem (I/O)
+                // Alternate between CPU execution and system call (I/O)
                 isCurrentlyDoingIo = !isCurrentlyDoingIo;
             } else {
-                // Nu mai sunt elemente, deci procesul si-a incheiat executia
+                // No more elements, so the process has finished its execution
                 this.setState(ProcessState.TERMINATED);
             }
         }
     }
 
     /**
-     * Returneaza o reprezentare text a procesului pentru debugging si jurnalizare.
+     * Returns a text representation of the process for debugging and logging.
      *
-     * @return Detaliile procesului formatate ca sir de caractere.
+     * @return Formatted string with process details.
      */
     @Override
     public String toString() {
         return "UserProcess{id=" + id + ", releaseTime=" + releaseTime +
                 ", requiredMemory=" + requiredMemory +
+                ", currentState=" + currentState +
+                ", lastProcessorId=" + lastProcessorId +
                 ", sequenceLength=" + (executionSequence != null ? executionSequence.length : 0) + "}";
     }
 }

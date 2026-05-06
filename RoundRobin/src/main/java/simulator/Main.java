@@ -11,7 +11,7 @@ public class Main {
 
         // 1. Parsam fisierul
         InputParser parser = new InputParser();
-        parser.parseFile("input.txt");
+        parser.parseFile("C:\\Users\\anaun\\Desktop\\systems_quality\\Round-Robin\\RoundRobin\\input.txt");
 
         if (parser.getConfig() == null || parser.getProcesses() == null) {
             System.out.println("Eroare: Nu s-au putut citi datele din input.txt!");

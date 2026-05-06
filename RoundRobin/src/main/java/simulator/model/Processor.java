@@ -1,25 +1,25 @@
 package simulator.model;
 
 /**
- * Reprezinta o unitate fizica de procesare (CPU) din cadrul simulatorului.
- * Rolul sau este de a gazdui un proces, de a-l executa pas cu pas (tick cu tick)
- * si de a tine evidenta timpului ramas din cuanta alocata pentru algoritmul Round-Robin.
+ * Represents a physical processing unit (CPU) within the simulator.
+ * Its role is to host a process, execute it step-by-step (tick by tick),
+ * and keep track of the remaining time from the quantum allocated for the Round-Robin algorithm.
  */
 public class Processor {
 
-    /** Identificatorul unic al procesorului (ex: 0, 1, 2...). */
+    /** The unique identifier of the processor (e.g., 0, 1, 2...). */
     private final int id;
 
-    /** Referinta catre procesul care ruleaza in prezent pe acest procesor. Null daca este liber. */
+    /** Reference to the process currently running on this processor. Null if it is idle. */
     private Process currentProcess;
 
-    /** Timpul ramas (in tick-uri) pana cand procesul curent va fi preemptionat. */
+    /** The remaining time (in ticks) until the current process will be preempted. */
     private int timeSliceRemaining;
 
     /**
-     * Construieste un procesor nou, initial liber.
+     * Constructs a new processor, initially idle.
      *
-     * @param id Identificatorul procesorului.
+     * @param id The processor's identifier.
      */
     public Processor(int id) {
         this.id = id;
@@ -28,48 +28,48 @@ public class Processor {
     }
 
     /**
-     * Returneaza identificatorul procesorului.
+     * Returns the processor's identifier.
      *
-     * @return ID-ul procesorului.
+     * @return The processor ID.
      */
     public int getId() {
         return id;
     }
 
     /**
-     * Verifica daca procesorul este liber (nu ruleaza niciun proces).
+     * Checks if the processor is idle (not running any process).
      *
-     * @return true daca este disponibil, false daca este ocupat.
+     * @return true if it is available, false if it is occupied.
      */
     public boolean isIdle() {
         return currentProcess == null;
     }
 
     /**
-     * Returneaza procesul care ruleaza in prezent pe acest procesor.
+     * Returns the process currently running on this processor.
      *
-     * @return Procesul curent sau null daca procesorul este liber.
+     * @return The current process, or null if the processor is idle.
      */
     public Process getCurrentProcess() {
         return currentProcess;
     }
 
     /**
-     * Verifica daca timpul alocat procesului curent a expirat.
-     * Aceasta este conditia de preemptiune pentru planificatorul Round-Robin.
+     * Checks if the time allocated to the current process has expired.
+     * This is the preemption condition for the Round-Robin scheduler.
      *
-     * @return true daca time slice-ul a ajuns la 0, false altfel.
+     * @return true if the time slice has reached 0, false otherwise.
      */
     public boolean isTimeSliceExpired() {
         return timeSliceRemaining <= 0;
     }
 
     /**
-     * Aloca un proces pe acest procesor si ii seteaza cuanta de timp.
-     * Actualizeaza starea procesului si ii memoreaza afinitatea.
+     * Assigns a process to this processor and sets its time quantum.
+     * Updates the process state and records its affinity.
      *
-     * @param process   Procesul care va fi executat.
-     * @param timeSlice Cuanta maxima de timp permisa pentru o rulare continua.
+     * @param process   The process to be executed.
+     * @param timeSlice The maximum time quantum allowed for continuous execution.
      */
     public void assignProcess(Process process, int timeSlice) {
         this.currentProcess = process;
@@ -78,14 +78,14 @@ public class Processor {
         if (process != null) {
             process.setState(ProcessState.RUNNING);
             process.setLastProcessorId(this.id);
-            System.out.println("    [CPU " + this.id + "] a preluat Procesul " + process.getId());
+            System.out.println("    [CPU " + this.id + "] picked up Process " + process.getId());
         }
     }
 
     /**
-     * Elimina procesul curent de pe procesor (ex: cand a expirat timpul sau a terminat).
+     * Evicts the current process from the processor (e.g., when time has expired or it terminated).
      *
-     * @return Procesul care a fost tocmai scos, pentru a putea fi repus in coada sau terminat.
+     * @return The process that was just removed, so it can be put back in the queue or terminated.
      */
     public Process evictProcess() {
         Process evicted = this.currentProcess;
@@ -95,10 +95,10 @@ public class Processor {
     }
 
     /**
-     * Executa o unitate de timp din procesul curent, daca exista unul.
-     * De asemenea, scade timpul ramas din cuanta alocata.
+     * Executes one time unit of the current process, if one exists.
+     * It also decreases the remaining time from the allocated quantum.
      *
-     * @param currentTime Timpul global curent al simularii.
+     * @param currentTime The current global simulation time.
      */
     public void executeTick(int currentTime) {
         if (currentProcess != null) {

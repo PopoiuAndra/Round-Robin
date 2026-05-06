@@ -1,36 +1,36 @@
 package simulator.model;
 
 /**
- * Clasa abstracta care defineste structura si starea de baza a unui proces din sistem.
- * Serveste ca fundatie atat pentru procesele de utilizator, cat si pentru procesul de sistem.
- * Gestioneaza informatiile independente de tipul procesului, cum ar fi identificatorul,
- * cerintele de memorie si starea curenta a acestuia in ciclul de viata.
+ * Abstract class defining the structure and base state of a process in the system.
+ * Serves as the foundation for both user processes and the system process.
+ * Manages information independent of the process type, such as the identifier,
+ * memory requirements, and its current state in the lifecycle.
  */
 public abstract class Process {
 
-    /** * Identificatorul unic al procesului (PID).
+    /** * Unique identifier of the process (PID).
      */
     protected final int id;
 
-    /** * Cantitatea de memorie RAM necesara pentru ca procesul sa poata fi incarcat din memoria virtuala.
+    /** * The amount of RAM required for the process to be loaded from virtual memory (DISK).
      */
     protected final int requiredMemory;
 
-    /** * Starea curenta a procesului conform masinii de stari a simulatorului.
+    /** * The current state of the process according to the simulator's state machine.
      */
     protected ProcessState currentState;
 
-    /** * ID-ul ultimului procesor pe care a rulat procesul.
-     * Valoarea initiala este -1, indicand ca procesul nu a fost inca programat pe niciun procesor.
-     * Acest atribut este esential pentru implementarea logicii de afinitate a procesorului.
+    /** * The ID of the last processor the process ran on.
+     * The initial value is -1, indicating the process hasn't been scheduled on any processor yet.
+     * This attribute is essential for implementing processor affinity logic.
      */
     protected int lastProcessorId = -1;
 
     /**
-     * Construieste un proces nou si il initializeaza in starea NEW.
+     * Constructs a new process and initializes it in the NEW state.
      *
-     * @param id             Identificatorul unic al procesului.
-     * @param requiredMemory Memoria necesara pentru executie.
+     * @param id             The unique identifier of the process.
+     * @param requiredMemory The memory required for execution.
      */
     public Process(int id, int requiredMemory) {
         this.id = id;
@@ -39,65 +39,66 @@ public abstract class Process {
     }
 
     /**
-     * Returneaza identificatorul unic al procesului.
+     * Returns the unique identifier of the process.
      *
-     * @return ID-ul procesului.
+     * @return The process ID.
      */
     public int getId() {
         return id;
     }
 
     /**
-     * Returneaza necesarul de memorie al procesului.
+     * Returns the memory requirement of the process.
      *
-     * @return Memoria necesara in unitati de memorie.
+     * @return Required memory in memory units.
      */
     public int getRequiredMemory() {
         return requiredMemory;
     }
 
     /**
-     * Returneaza starea curenta a procesului.
+     * Returns the current state of the process.
      *
-     * @return Starea curenta (ex. READY, RUNNING, WAITING_IO).
+     * @return Current state (e.g., READY, RUNNING, WAITING_IO).
      */
     public ProcessState getCurrentState() {
         return currentState;
     }
 
     /**
-     * Actualizeaza starea procesului in sistem.
+     * Updates the process state in the system.
      *
-     * @param state Noua stare a procesului.
+     * @param state The new state of the process.
      */
     public void setState(ProcessState state) {
         this.currentState = state;
     }
 
     /**
-     * Returneaza ID-ul ultimului procesor pe care a fost executat procesul.
+     * Returns the ID of the last processor the process was executed on.
      *
-     * @return ID-ul procesorului sau -1 daca nu a rulat inca.
+     * @return The processor ID or -1 if it has not yet run.
      */
     public int getLastProcessorId() {
         return lastProcessorId;
     }
 
     /**
-     * Seteaza ID-ul procesorului pe care ruleaza procesul in prezent.
+     * Sets the ID of the processor the process is currently running on.
      *
-     * @param lastProcessorId ID-ul procesorului alocat.
+     * @param lastProcessorId The allocated processor ID.
      */
     public void setLastProcessorId(int lastProcessorId) {
         this.lastProcessorId = lastProcessorId;
     }
 
     /**
-     * Metoda abstracta apelata la fiecare unitate de timp (tick) de catre procesorul
-     * pe care este programat procesul. Fiecare tip de proces (User sau System)
-     * trebuie sa implementeze propria logica de consumare a timpului.
+     * Abstract method called at every time unit (tick) by the processor
+     * where the process is scheduled. Each type of process (User or System)
+     * must implement its own time consumption logic.
      *
-     * @param currentTime Timpul global curent al simularii.
+     * @param currentTime The current global simulation time.
      */
     public abstract void executeTick(int currentTime);
 }
+
