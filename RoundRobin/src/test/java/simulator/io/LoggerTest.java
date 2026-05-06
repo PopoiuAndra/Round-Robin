@@ -29,9 +29,9 @@ public class LoggerTest {
 
         List<String> lines = Files.readAllLines(logPath);
 
-        assertTrue(lines.contains("=== JURNAL EXECUTIE SIMULATOR ==="), "Header should be present");
+        assertTrue(lines.contains("=== SIMULATOR EXECUTION LOG ==="), "Header should be present");
         assertTrue(lines.contains("Test Message 1"), "Log message should be written to file");
-        assertTrue(lines.contains("=== SIMULARE FINALIZATA ==="), "Footer should be written upon closin");
+        assertTrue(lines.contains("=== SIMULATION FINALIZED ==="), "Footer should be written upon closin");
     }
 
     @Test

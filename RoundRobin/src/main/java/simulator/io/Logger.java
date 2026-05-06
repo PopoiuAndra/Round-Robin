@@ -5,7 +5,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 
 /**
- * Asculta evenimentele motorului si scrie mesajele text intr-un fisier fizic (output.txt).
+ * Listens to engine events and writes text messages to a physical file (output.txt).
  */
 public class Logger implements SimulationEventListener {
     private PrintWriter writer;
@@ -13,9 +13,9 @@ public class Logger implements SimulationEventListener {
     public Logger(String outputFilePath) {
         try {
             writer = new PrintWriter(new FileWriter(outputFilePath, false));
-            writer.println("=== JURNAL EXECUTIE SIMULATOR ===");
+            writer.println("=== SIMULATOR EXECUTION LOG ===");
         } catch (IOException e) {
-            System.out.println("Eroare Logger: " + e.getMessage());
+            System.out.println("Logger Error: " + e.getMessage());
         }
     }
 
@@ -23,20 +23,20 @@ public class Logger implements SimulationEventListener {
     public void onLogMessage(String message) {
         if (writer != null) {
             writer.println(message);
-            writer.flush(); // Ne asiguram ca datele sunt scrise imediat
+            writer.flush(); // Ensure data is written immediately
         }
-        System.out.println(message); // Printam si in consola
+        System.out.println(message); // Also print to console
     }
 
     @Override
     public void onCpuExecution(int cpuId, int processId, int tick) {
-        // Logger-ul text nu are nevoie de fiecare tick separat pentru CPU,
-        // asa ca lasam aceasta metoda goala pentru el.
+        // The text logger does not need every separate tick for the CPU,
+        // so we leave this method empty.
     }
 
     public void close() {
         if (writer != null) {
-            writer.println("=== SIMULARE FINALIZATA ===");
+            writer.println("=== SIMULATION FINALIZED ===");
             writer.close();
         }
     }

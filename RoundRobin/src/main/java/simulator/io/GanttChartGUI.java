@@ -10,13 +10,13 @@ import java.util.Map;
 public class GanttChartGUI extends JFrame implements SimulationEventListener {
 
     private final Map<Integer, List<ExecutionBlock>> cpuSchedules = new HashMap<>();
-    private final List<ExecutionBlock> diskSchedule = new ArrayList<>(); // NOU: Linia Discului
+    private final List<ExecutionBlock> diskSchedule = new ArrayList<>(); // Disk Line
 
     private int maxTick = 0;
     private final GanttPanel ganttPanel;
 
     public GanttChartGUI(int numProcessors) {
-        setTitle("Simulator OS - Diagrama Gantt (CPU + Disk)");
+        setTitle("OS Simulator - Gantt Chart (CPU + Disk)");
         setSize(1000, 600);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
@@ -42,7 +42,7 @@ public class GanttChartGUI extends JFrame implements SimulationEventListener {
         if (tick > maxTick) maxTick = tick;
     }
 
-    // NOU: Inregistram executia pe Hard Disk
+    // Recording Hard Disk execution
     @Override
     public void onDiskExecution(int processId, int tick) {
         if (!diskSchedule.isEmpty() && diskSchedule.get(diskSchedule.size() - 1).processId == processId
@@ -90,7 +90,7 @@ public class GanttChartGUI extends JFrame implements SimulationEventListener {
         @Override
         public Dimension getPreferredSize() {
             int totalWidth = PADDING_X + (maxTick + 2) * TICK_WIDTH;
-            // Am adaugat +1 la size pentru randul de DISK
+            // Added +1 to size for the DISK row
             int totalHeight = PADDING_Y + (cpuSchedules.size() + 1) * (ROW_HEIGHT + 30) + 50;
             return new Dimension(totalWidth, totalHeight);
         }
@@ -104,7 +104,7 @@ public class GanttChartGUI extends JFrame implements SimulationEventListener {
             g2d.setColor(Color.WHITE);
             g2d.fillRect(0, 0, getWidth(), getHeight());
 
-            // 1. AXA TIMPULUI
+            // 1. TIMELINE AXIS
             g2d.setFont(new Font("Arial", Font.BOLD, 14));
             int timelineY = PADDING_Y - 20;
 
@@ -122,7 +122,7 @@ public class GanttChartGUI extends JFrame implements SimulationEventListener {
             g2d.drawLine(PADDING_X, timelineY, PADDING_X + (maxTick + 1) * TICK_WIDTH, timelineY);
             g2d.setStroke(new BasicStroke(1));
 
-            // 2. DESENAM CPU-URILE
+            // 2. DRAWING THE CPUS
             for (Map.Entry<Integer, List<ExecutionBlock>> entry : cpuSchedules.entrySet()) {
                 int cpuId = entry.getKey();
                 int yPos = PADDING_Y + cpuId * (ROW_HEIGHT + 30);
@@ -137,22 +137,22 @@ public class GanttChartGUI extends JFrame implements SimulationEventListener {
                 drawBlocks(g2d, entry.getValue(), yPos);
             }
 
-            // 3. DESENAM HARD DISK-UL (NOU)
+            // 3. DRAWING THE HARD DISK (NEW)
             int diskYPos = PADDING_Y + cpuSchedules.size() * (ROW_HEIGHT + 30);
 
             g2d.setFont(new Font("Arial", Font.BOLD, 18));
-            g2d.setColor(new Color(139, 69, 19)); // Culoare Maro pentru Disk label
+            g2d.setColor(new Color(139, 69, 19)); // Brown color for Disk label
             g2d.drawString("HARD DISK", 10, diskYPos + ROW_HEIGHT / 2 + 5);
 
             g2d.setColor(Color.LIGHT_GRAY);
             g2d.drawLine(PADDING_X, diskYPos + ROW_HEIGHT / 2, getWidth(), diskYPos + ROW_HEIGHT / 2);
 
-            // Desenam blocurile discului
+            // Drawing the disk blocks
             for (ExecutionBlock block : diskSchedule) {
                 int rectX = PADDING_X + block.startTick * TICK_WIDTH;
                 int rectWidth = (block.endTick - block.startTick + 1) * TICK_WIDTH;
 
-                g2d.setColor(new Color(200, 150, 50)); // Culoare Bronze/Portocaliu pt Disk Transfer
+                g2d.setColor(new Color(200, 150, 50)); // Bronze/Orange color for Disk Transfer
                 g2d.fillRoundRect(rectX, diskYPos, rectWidth, ROW_HEIGHT, 15, 15);
                 g2d.setColor(Color.BLACK);
                 g2d.drawRoundRect(rectX, diskYPos, rectWidth, ROW_HEIGHT, 15, 15);
@@ -166,7 +166,7 @@ public class GanttChartGUI extends JFrame implements SimulationEventListener {
             }
         }
 
-        // Metoda ajutatoare pentru a nu repeta codul la desenarea blocurilor CPU
+        // Helper method to avoid code repetition when drawing CPU blocks
         private void drawBlocks(Graphics2D g2d, List<ExecutionBlock> blocks, int yPos) {
             for (ExecutionBlock block : blocks) {
                 int rectX = PADDING_X + block.startTick * TICK_WIDTH;

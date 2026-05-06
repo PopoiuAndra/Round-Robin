@@ -1,34 +1,34 @@
 package simulator.config;
 
 /**
- * Clasa SimulationConfig stocheaza parametrii imuabili ai simularii.
- * Aceasta serveste drept "Sursa de Adevar" pentru toate componentele sistemului.
+ * The SimulationConfig class stores the immutable parameters of the simulation.
+ * This serves as the "Source of Truth" for all system components.
  */
 public class SimulationConfig {
 
-    /** Numarul de procesoare disponibile in sistem. */
+    /** Number of processors available in the system. */
     private final int numProcessors;
 
-    /** Cantitatea totala de memorie RAM disponibila (in unitati de memorie). */
+    /** Total amount of available RAM (in memory units). */
     private final int totalRAM;
 
-    /** Cuanta de timp (Time Slice) alocata fiecarui proces in Round Robin. */
+    /** The time slice allocated to each process in Round Robin. */
     private final int timeSlice;
 
-    /** Perioada de timp la care procesul de sistem se activeaza periodic. */
+    /** The time period at which the system process activates periodically. */
     private final int systemProcessPeriod;
 
-    /** Viteza de transfer a datelor de pe Disk in RAM (unitati/tick). */
+    /** Data transfer rate from Disk to RAM (units/tick). */
     private final double diskTransferRate;
 
     /**
-     * Construieste o configuratie completa pentru simulator.
+     * Constructs a complete configuration for the simulator.
      *
-     * @param numProcessors       Numarul de procesoare disponibile (n > 0).
-     * @param totalRAM            Cantitatea totala de memorie RAM disponibila.
-     * @param timeSlice           Cuanta de timp pentru Round Robin.
-     * @param systemProcessPeriod Perioada la care se activeaza procesul de sistem.
-     * @param diskTransferRate    Viteza de transfer HDD -> RAM (unitati/tick).
+     * @param numProcessors       Number of available processors (n > 0).
+     * @param totalRAM            Total amount of available RAM.
+     * @param timeSlice           Time slice for Round Robin.
+     * @param systemProcessPeriod Period at which the system process activates.
+     * @param diskTransferRate    Transfer rate HDD -> RAM (units/tick).
      */
     public SimulationConfig(int numProcessors, int totalRAM, int timeSlice,
                             int systemProcessPeriod, double diskTransferRate) {
@@ -40,48 +40,48 @@ public class SimulationConfig {
     }
 
     /**
-     * Returneaza numarul de procesoare configurate in sistem.
-     * * @return Numarul de unitati CPU.
+     * Returns the number of processors configured in the system.
+     * @return Number of CPU units.
      */
     public int getNumProcessors() {
         return numProcessors;
     }
 
     /**
-     * Returneaza cantitatea totala de memorie RAM disponibila.
-     * * @return Memoria RAM totala in unitati de masura specifice.
+     * Returns the total amount of available RAM.
+     * @return Total RAM in specific units of measurement.
      */
     public int getTotalRAM() {
         return totalRAM;
     }
 
     /**
-     * Returneaza cuanta de timp (time slice) folosita de planificatorul Round Robin.
-     * * @return Valoarea time slice-ului in tick-uri.
+     * Returns the time slice used by the Round Robin scheduler.
+     * @return Time slice value in ticks.
      */
     public int getTimeSlice() {
         return timeSlice;
     }
 
     /**
-     * Returneaza frecventa de activare a procesului de sistem (VIP).
-     * * @return Numarul de tick-uri dintre activarile automate.
+     * Returns the activation frequency of the system process (VIP).
+     * @return Number of ticks between automatic activations.
      */
     public int getSystemProcessPeriod() {
         return systemProcessPeriod;
     }
 
     /**
-     * Returneaza viteza cu care datele sunt transferate de pe disk in RAM.
-     * * @return Unitati de memorie transferate per tick.
+     * Returns the speed at which data is transferred from disk to RAM.
+     * @return Memory units transferred per tick.
      */
     public double getDiskTransferRate() {
         return diskTransferRate;
     }
 
     /**
-     * Returneaza o reprezentare sub forma de text a configuratiei curente.
-     * * @return Sir de caractere continand toti parametrii de configurare.
+     * Returns a text representation of the current configuration.
+     * @return Character string containing all configuration parameters.
      */
     @Override
     public String toString() {

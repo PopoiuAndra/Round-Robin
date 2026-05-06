@@ -7,49 +7,49 @@ import java.io.FileReader;
 import java.io.IOException;
 
 /**
- * Clasa responsabila cu citirea si decodificarea fisierului de intrare.
- * Respecta restrictia de a nu utiliza functii de librarie pentru procesarea sirurilor
- * (precum String.split sau Scanner complex), extragand numerele caracter cu caracter.
+ * Class responsible for reading and decoding the input file.
+ * Adheres to the restriction of not using library functions for string processing
+ * (such as String.split or complex Scanners), extracting numbers character by character.
  */
 public class InputParser {
 
-    /** Obiectul care va stoca setarile globale citite de pe prima linie. */
+    /** The object that will store the global settings read from the first line. */
     private SimulationConfig config;
 
-    /** Vectorul in care vor fi stocate toate procesele de utilizator citite. */
+    /** The array in which all read user processes will be stored. */
     private UserProcess[] processes;
 
-    /** Numarul total de procese citite cu succes. */
+    /** The total number of processes successfully read. */
     private int processCount = 0;
 
     /**
-     * Citeste fisierul linie cu linie, initializand configuratia si lista de procese.
+     * Reads the file line by line, initializing the configuration and the list of processes.
      *
-     * @param filePath Calea catre fisierul text de intrare (ex: "input.txt").
+     * @param filePath The path to the input text file (e.g., "input.txt").
      */
     public void parseFile(String filePath) {
         try (BufferedReader reader = new BufferedReader(new FileReader(filePath))) {
 
-            // 1. Citim prima linie pentru configurarea globala
+            // 1. Read the first line for the global configuration
             String configLine = reader.readLine();
             int[] configParams = parseLineToIntArray(configLine);
 
-            // Cream obiectul de configurare pe baza celor 5 parametri asteptati
+            // Create the configuration object based on the 5 expected parameters
             this.config = new SimulationConfig(
                     configParams[0], // numProcessors
                     configParams[1], // totalRAM
                     configParams[2], // timeSlice
                     configParams[3], // systemProcessPeriod
-                    configParams[4]  // diskTransferRate (fortat ca int conform deciziei anterioare)
+                    configParams[4]  // diskTransferRate (forced as int per previous decision)
             );
 
-            // 2. Citim restul liniilor pentru procese
+            // 2. Read the remaining lines for processes
             UserProcess[] tempProcesses = new UserProcess[1000];
             String line;
-            int currentId = 1; // ID-urile proceselor de utilizator incep de la 1 (0 e rezervat pt sistem)
+            int currentId = 1; // User process IDs start from 1 (0 is reserved for system)
 
             while ((line = reader.readLine()) != null) {
-                // Sarim peste liniile goale
+                // Skip empty lines
                 if (line.length() == 0) continue;
 
                 int[] processData = parseLineToIntArray(line);
@@ -57,42 +57,42 @@ public class InputParser {
                 int releaseTime = processData[0];
                 int memory = processData[1];
 
-                // Restul numerelor reprezinta secventa de executie
+                // The remaining numbers represent the execution sequence
                 int sequenceLength = processData.length - 2;
                 int[] sequence = new int[sequenceLength];
                 for (int i = 0; i < sequenceLength; i++) {
                     sequence[i] = processData[i + 2];
                 }
 
-                // Cream si stocam procesul
+                // Create and store the process
                 tempProcesses[processCount] = new UserProcess(currentId, memory, releaseTime, sequence);
                 processCount++;
                 currentId++;
             }
 
-            // 3. Copiem procesele intr-un vector final, dimensionat exact
+            // 3. Copy processes into a final, exactly-sized array
             processes = new UserProcess[processCount];
             for (int i = 0; i < processCount; i++) {
                 processes[i] = tempProcesses[i];
             }
 
         } catch (IOException e) {
-            System.out.println("Eroare la citirea fisierului de intrare: " + e.getMessage());
+            System.out.println("Error reading the input file: " + e.getMessage());
         }
     }
 
     /**
-     * Extrage manual toate numerele dintr-un sir de caractere.
-     * Nu foloseste nicio functie utilitara Java pentru spargerea textului.
+     * Manually extracts all numbers from a character string.
+     * Does not use any Java utility functions for text splitting.
      *
-     * @param line Linia de text curenta.
-     * @return Un vector cu toate numerele intregi gasite pe linie.
+     * @param line The current text line.
+     * @return An array containing all integer numbers found on the line.
      */
     private int[] parseLineToIntArray(String line) {
         int count = 0;
         boolean inNumber = false;
 
-        // Pasul A: Numaram cate numere sunt pe linie pentru a aloca vectorul
+        // Step A: Count how many numbers are on the line to allocate the array
         for (int i = 0; i < line.length(); i++) {
             char c = line.charAt(i);
             if (c != ' ' && c != '\t') {
@@ -110,11 +110,11 @@ public class InputParser {
         int currentNumber = 0;
         inNumber = false;
 
-        // Pasul B: Construim numerele matematic (cifra cu cifra)
+        // Step B: Build the numbers mathematically (digit by digit)
         for (int i = 0; i < line.length(); i++) {
             char c = line.charAt(i);
             if (c != ' ' && c != '\t') {
-                // Daca intalnim un punct (ex. 5.0), ignoram partea zecimala
+                // If we encounter a dot (e.g., 5.0), ignore the decimal part
                 if (c == '.') {
                     inNumber = false;
                     continue;
@@ -133,7 +133,7 @@ public class InputParser {
             }
         }
 
-        // Salvam ultimul numar daca randul s-a terminat brusc
+        // Save the last number if the row ended abruptly
         if (inNumber && numIndex < count) {
             numbers[numIndex] = currentNumber;
         }
@@ -142,14 +142,14 @@ public class InputParser {
     }
 
     /**
-     * @return Configuratia globala citita din fisier.
+     * @return The global configuration read from the file.
      */
     public SimulationConfig getConfig() {
         return config;
     }
 
     /**
-     * @return Vectorul cu procesele de utilizator initializate.
+     * @return The array of initialized user processes.
      */
     public UserProcess[] getProcesses() {
         return processes;

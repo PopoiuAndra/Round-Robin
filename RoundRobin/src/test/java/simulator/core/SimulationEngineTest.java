@@ -163,6 +163,6 @@ public class SimulationEngineTest {
         // Run with 0 completed processes to hit timeout
         // The engine should stop by itself at 20.000 ticks
         engine.run();
-        verify(mockListener, atLeastOnce()).onLogMessage(contains("Simularea a fost oprita fortat"));
+        verify(mockListener, atLeastOnce()).onLogMessage(contains("Simulation was forcibly stopped"));
     }
 }
