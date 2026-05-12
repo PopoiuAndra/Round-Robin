@@ -33,6 +33,9 @@ public class GanttChartGUITest {
         // Branch 4: Create a new block (different process, consecutive tick)
         gui.onCpuExecution(0, 20, 9);
 
+        // Branch 5: We add a block on CPU 0 at tick 4. Since maxTick is already 9, `4 > 9` is FALSE.
+        gui.onCpuExecution(0, 10, 4);
+
         // Verify indirectly by calling showChart without blocking the execution thread
         assertDoesNotThrow(() -> gui.onLogMessage("Dummy message")); // Test empty method
     }
@@ -48,6 +51,12 @@ public class GanttChartGUITest {
 
         // Branch 3: New disk block (different process)
         gui.onDiskExecution(2, 3);
+
+        // Branch 4: We use the SAME processId (2), but a NON-consecutive tick (5 instead of 4).
+        gui.onDiskExecution(2, 5); // maxTick becomes 5
+
+        // Branch 5: We add a block at tick 4. Since maxTick is 5, `4 > 5` is FALSE.
+        gui.onDiskExecution(3, 4);
 
         assertNotNull(gui);
     }

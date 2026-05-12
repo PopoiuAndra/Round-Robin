@@ -50,8 +50,8 @@ public class SystemProcessTest {
         assertFalse(userProcess.isCurrentlyDoingIo(), "Process should transition back to CPU mode for its final burst.");
         assertNotEquals(ProcessState.TERMINATED, userProcess.getCurrentState(), "Process should NOT be terminated yet.");
 
-//        userProcess.executeTick(4);
-//        assertEquals(ProcessState.TERMINATED, userProcess.getCurrentState(), "Process should be TERMINATED after the entire sequence ends.");
+        userProcess.executeTick(4);
+        assertEquals(ProcessState.TERMINATED, userProcess.getCurrentState(), "Process should be TERMINATED after the entire sequence ends.");
     }
 
     @Test

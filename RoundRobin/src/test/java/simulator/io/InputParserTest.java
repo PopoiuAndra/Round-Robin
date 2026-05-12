@@ -30,6 +30,10 @@ public class InputParserTest {
             fw.write("2   512\t10 100 2.0\n");
             // Process line: Release=0, Mem=100, Sequence=(5, 2, 5)
             fw.write("0 100 5 2 5\n");
+            // Empty Process Line
+            fw.write("\n");
+            // Characters with ASCII code < '0' (e.g., +, -, /) and > '9' (e.g., A, X)
+            fw.write("1 100 5 + 2 - / A \n");
         }
 
         parser.parseFile(tempFile.getAbsolutePath());
@@ -43,7 +47,7 @@ public class InputParserTest {
         // Verify Process parsing
         UserProcess[] processes = parser.getProcesses();
         assertNotNull(processes, "Process list should not be null");
-        assertEquals(1, processes.length, "One process should have been successfully parsed");
+        assertEquals(2, processes.length, "Two processes should have been successfully parsed");
         assertEquals(100, processes[0].getRequiredMemory(), "Memory required should be 100");
 
         // Cleanup

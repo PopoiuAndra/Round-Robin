@@ -3,54 +3,60 @@ package simulator.core;
 import simulator.model.Process;
 
 /**
- * Gestioneaza memoria RAM a sistemului si implementeaza manual politica
- * de inlocuire a paginilor LRU (Least Recently Used) fara utilizarea librariilor Java.
- * Tot aici se tine evidenta timpului necesar pentru a aduce un proces de pe disc in RAM.
+ * Manages the system RAM memory and manually implements the
+ * LRU (Least Recently Used) page replacement policy
+ * without using Java libraries.
+ * It also keeps track of the time required to load a process
+ * from disk into RAM.
  */
 public class MemoryManager implements MemoryReplacementStrategy {
 
-    /** Cantitatea totala de memorie RAM disponibila in sistem. */
+    /** Total amount of RAM available in the system. */
     private final int totalRam;
 
-    /** Cantitatea de memorie RAM ocupata in prezent. */
+    /** Amount of RAM currently in use. */
     private int usedRam;
 
-    /** Rata de transfer intre Disk si RAM (unitati de memorie per tick). */
+    /** Transfer rate between Disk and RAM (memory units per tick). */
     private final double diskTransferRate;
 
-    // --- Implementare Manuala LRU ---
-    /** Vectorul care retine procesele aflate in prezent in RAM. */
+    // --- Manual LRU Implementation ---
+
+    /** Array storing the processes currently loaded in RAM. */
     private final Process[] ramProcesses;
 
-    /** Numarul de procese aflate momentan in RAM. */
+    /** Number of processes currently in RAM. */
     private int ramProcessCount;
 
-    // --- Gestionarea transferului (Swapping) ---
-    /** Procesul care este transferat de pe disc in RAM in acest moment. */
+    // --- Swapping Management ---
+
+    /** The process currently being transferred from disk into RAM. */
     private Process swappingProcess = null;
 
-    /** Timpul (in tick-uri) ramas pana la finalizarea transferului procesului curent. */
+    /** Remaining time (in ticks) until the current transfer finishes. */
     private int swapTicksRemaining = 0;
 
     /**
-     * Construieste managerul de memorie.
+     * Constructs the memory manager.
      *
-     * @param totalRam         Memoria maxima fizica.
-     * @param diskTransferRate Viteza de copiere memorie/tick.
+     * @param totalRam         Maximum physical memory.
+     * @param diskTransferRate Memory copy speed per tick.
      */
     public MemoryManager(int totalRam, double diskTransferRate) {
         this.totalRam = totalRam;
         this.diskTransferRate = diskTransferRate;
         this.usedRam = 0;
         this.ramProcessCount = 0;
-        this.ramProcesses = new Process[1000]; // Presupunem un maxim de 1000 procese simultane in RAM
+
+        // Assume a maximum of 1000 simultaneous processes in RAM
+        this.ramProcesses = new Process[1000];
     }
 
     /**
-     * Verifica daca un proces este deja incarcat complet in memoria RAM.
+     * Checks whether a process is already fully loaded into RAM.
      *
-     * @param p Procesul cautat.
-     * @return true daca este in RAM, false altfel.
+     * @param p The process being searched.
+     * @return true if the process is in RAM, false otherwise.
      */
     public boolean isProcessInRam(Process p) {
         for (int i = 0; i < ramProcessCount; i++) {
@@ -62,15 +68,19 @@ public class MemoryManager implements MemoryReplacementStrategy {
     }
 
     /**
-     * Marcheaza un proces ca fiind "Recent Utilizat" (Most Recently Used).
-     * Acest lucru il muta la finalul vectorului, ferindu-l de a fi scos pe disc (LRU).
-     * Aceasta metoda trebuie apelata de Scheduler ori de cate ori procesul primeste procesor.
+     * Marks a process as "Most Recently Used".
+     * This moves it to the end of the array,
+     * protecting it from being swapped out (LRU policy).
+     * This method should be called by the Scheduler
+     * whenever the process receives CPU time.
      *
-     * @param p Procesul care tocmai a fost accesat/rulat.
+     * @param p The process that was just accessed/executed.
      */
     public void markAsRecentlyUsed(Process p) {
+
         int index = -1;
-        // 1. Gasim procesul in vector
+
+        // 1. Find the process in the array
         for (int i = 0; i < ramProcessCount; i++) {
             if (ramProcesses[i].getId() == p.getId()) {
                 index = i;
@@ -78,37 +88,64 @@ public class MemoryManager implements MemoryReplacementStrategy {
             }
         }
 
-        // 2. Daca l-am gasit si nu e deja ultimul, il mutam la final
+        // 2. If found and not already the last element, move it to the end
         if (index != -1 && index < ramProcessCount - 1) {
+
             Process temp = ramProcesses[index];
-            // Shiftam toate elementele din dreapta lui cu o pozitie la stanga
+
+            // Shift all elements on the right one position to the left
             for (int i = index; i < ramProcessCount - 1; i++) {
                 ramProcesses[i] = ramProcesses[i + 1];
             }
-            // Punem procesul accesat pe ultima pozitie
+
+            // Place the accessed process at the last position
             ramProcesses[ramProcessCount - 1] = temp;
         }
     }
 
-    public void startLoadingProcessToRam(Process p, int globalTime, SimulationEngine engine) {
+    /**
+     * Starts loading a process from Disk into RAM.
+     * If RAM is full, LRU eviction is performed first.
+     */
+    public void startLoadingProcessToRam(Process p,
+                                         int globalTime,
+                                         SimulationEngine engine) {
+
         while (usedRam + p.getRequiredMemory() > totalRam) {
             evictLeastRecentlyUsed(globalTime, engine);
         }
+
         this.swappingProcess = p;
-        this.swapTicksRemaining = (int) Math.ceil(p.getRequiredMemory() / diskTransferRate);
+
+        this.swapTicksRemaining =
+                (int) Math.ceil(p.getRequiredMemory() / diskTransferRate);
+
         if (this.swapTicksRemaining <= 0) {
             this.swapTicksRemaining = 1;
         }
-        engine.logEvent(globalTime, "MEMORY", "Incepe transferul de pe Disk in RAM (Swap-In) pentru Procesul " + p.getId() + " (Dureaza " + swapTicksRemaining + " tick-uri).");
+
+        engine.logEvent(
+                globalTime,
+                "MEMORY",
+                "Disk -> RAM transfer (Swap-In) started for Process "
+                        + p.getId()
+                        + " (Takes "
+                        + swapTicksRemaining
+                        + " ticks)."
+        );
     }
 
     @Override
-    public void evictLeastRecentlyUsed(int globalTime, SimulationEngine engine) {
+    public void evictLeastRecentlyUsed(int globalTime,
+                                       SimulationEngine engine) {
+
         if (ramProcessCount == 0) return;
 
         Process victim = ramProcesses[0];
+
         usedRam -= victim.getRequiredMemory();
 
+        // Shift remaining processes left
         for (int i = 0; i < ramProcessCount - 1; i++) {
             ramProcesses[i] = ramProcesses[i + 1];
         }
@@ -116,20 +153,33 @@ public class MemoryManager implements MemoryReplacementStrategy {
         ramProcesses[ramProcessCount - 1] = null;
         ramProcessCount--;
 
-        engine.logEvent(globalTime, "MEMORY", "RAM Plin! Procesul " + victim.getId() + " a fost scos pe Disk (Evacuare LRU).");
+        engine.logEvent(
+                globalTime,
+                "MEMORY",
+                "RAM Full! Process "
+                        + victim.getId()
+                        + " was moved to Disk (LRU Eviction)."
+        );
     }
+
     /**
-     * Executa o unitate de timp din transferul de pe disc.
-     * Daca transferul se termina, procesul este adaugat fizic in RAM.
+     * Executes one unit of time for the disk transfer.
+     * If the transfer finishes, the process is physically added to RAM.
      *
-     * @return Procesul care tocmai a terminat de incarcat, sau null daca inca se incarca/nu se incarca nimic.
+     * @return The process that has just finished loading,
+     *         or null if loading is still in progress / nothing is loading.
      */
     public Process executeSwapTick() {
+
         if (swappingProcess != null) {
+
             swapTicksRemaining--;
+
             if (swapTicksRemaining <= 0) {
-                // Transfer finalizat
+
+                // Transfer completed
                 addProcessToRam(swappingProcess);
+
                 Process finishedProcess = swappingProcess;
 
                 swappingProcess = null;
@@ -138,28 +188,32 @@ public class MemoryManager implements MemoryReplacementStrategy {
                 return finishedProcess;
             }
         }
+
         return null;
     }
 
     /**
-     * Verifica daca exista un transfer Disk -> RAM in curs de desfasurare.
+     * Checks whether a Disk -> RAM transfer is currently in progress.
      */
     public boolean isSwapping() {
         return swappingProcess != null;
     }
 
-    // --- Metode Private Ajutatoare ---
+    // --- Private Helper Methods ---
 
     /**
-     * Adauga un proces in RAM, presupunand ca exista deja spatiu.
+     * Adds a process to RAM, assuming enough space already exists.
      */
     private void addProcessToRam(Process p) {
         ramProcesses[ramProcessCount] = p;
         ramProcessCount++;
+
         usedRam += p.getRequiredMemory();
     }
 
-    /** Returneaza procesul care este momentan citit de pe Disk. */
+    /**
+     * Returns the process currently being loaded from Disk.
+     */
     public simulator.model.Process getSwappingProcess() {
         return swappingProcess;
     }

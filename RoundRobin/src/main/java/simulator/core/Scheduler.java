@@ -4,12 +4,12 @@ import simulator.model.*;
 import simulator.model.Process;
 
 /**
- * Implementeaza algoritmul de planificare Round-Robin cu afinitate pentru procesor.
- * Gestioneaza o coada manuala a proceselor aflate in starea READY.
+ * Implements the Round-Robin scheduling algorithm with processor affinity.
+ * Manages a manual queue of processes in the READY state.
  */
 public class Scheduler implements SchedulingStrategy {
 
-    /** Coada manuala circulara pentru procesele pregatite de executie. */
+    /** Manual circular queue for processes ready for execution. */
     private final Process[] readyQueue;
     private final int capacity = 1000;
     private int head = 0;
@@ -21,9 +21,9 @@ public class Scheduler implements SchedulingStrategy {
     }
 
     /**
-     * Adauga un proces in coada de asteptare (READY).
+     * Adds a process to the waiting queue (READY).
      *
-     * @param p Procesul care trebuie adaugat.
+     * @param p The process to be added.
      */
     public void addProcess(Process p) {
         if (size < capacity) {
@@ -32,21 +32,21 @@ public class Scheduler implements SchedulingStrategy {
             size++;
             p.setState(ProcessState.READY);
         } else {
-            System.out.println("Eroare CRITICA: Scheduler Ready Queue este plina!");
+            System.out.println("CRITICAL ERROR: Scheduler Ready Queue is full!");
         }
     }
 
     /**
-     * Extrage din coada primul proces care a mai rulat pe procesorul specificat (Afinitate).
-     * Daca nu gaseste niciunul cu afinitate, extrage pur si simplu primul proces din coada.
+     * Extracts from the queue the first process that previously ran on the specified processor (Affinity).
+     * If none with affinity is found, simply extracts the first process in the queue.
      *
-     * @param processorId ID-ul procesorului pentru care cautam un proces.
-     * @return Procesul ales sau null daca coada e goala.
+     * @param processorId The ID of the processor for which we are searching a process.
+     * @return The selected process or null if the queue is empty.
      */
     private Process extractNextProcess(int processorId) {
         if (size == 0) return null;
 
-        // 1. Cautam un proces cu afinitate pentru acest procesor
+        // 1. Search for a process with affinity for this processor
         int curr = head;
         for (int i = 0; i < size; i++) {
             if (readyQueue[curr].getLastProcessorId() == processorId) {
@@ -55,17 +55,17 @@ public class Scheduler implements SchedulingStrategy {
             curr = (curr + 1) % capacity;
         }
 
-        // 2. Daca nu am gasit afinitate, dam primul proces din coada (Round-Robin clasic)
+        // 2. If no affinity was found, return the first process in the queue (classic Round-Robin)
         return removeProcessAtIndex(head, 0);
     }
 
     /**
-     * Metoda utilitara pentru a scoate un element din mijlocul cozii circulare manuale.
+     * Utility method for removing an element from the middle of the manual circular queue.
      */
     private Process removeProcessAtIndex(int queueIndex, int stepsFromHead) {
         Process p = readyQueue[queueIndex];
 
-        // Shiftam elementele din spate pentru a umple "gaura"
+        // Shift elements to fill the gap
         int curr = queueIndex;
         for (int i = stepsFromHead; i < size - 1; i++) {
             int next = (curr + 1) % capacity;
@@ -80,64 +80,95 @@ public class Scheduler implements SchedulingStrategy {
     }
 
     /**
-     * Ruleaza logica de planificare. Asigneaza procese pe procesoarele libere.
-     * Procesul de sistem are prioritate absoluta daca este in starea READY.
+     * Executes the scheduling logic. Assigns processes to free processors.
+     * The system process has absolute priority if it is in the READY state.
      *
-     * @param processors  Vectorul de procesoare fizice.
-     * @param sysProcess  Procesul de sistem (VIP).
-     * @param memManager  Managerul de memorie (pentru a verifica daca procesul e in RAM).
-     * @param timeSlice   Cuanta de timp permisa pentru executie.
+     * @param processors  Array of physical processors.
+     * @param sysProcess  The system process (VIP).
+     * @param memManager  Memory manager (used to check if the process is in RAM).
+     * @param timeSlice   Allowed execution time quantum.
      */
-    public void schedule(Processor[] processors, SystemProcess sysProcess, MemoryManager memManager, int timeSlice, int globalTime, SimulationEngine engine) {
+    public void schedule(Processor[] processors, SystemProcess sysProcess,
+                         MemoryManager memManager, int timeSlice,
+                         int globalTime, SimulationEngine engine) {
+
         for (int i = 0; i < processors.length; i++) {
             Processor cpu = processors[i];
 
             if (cpu.isIdle()) {
+
                 if (sysProcess.getCurrentState() == ProcessState.READY) {
                     cpu.assignProcess(sysProcess, timeSlice);
 
-                    // Verificam pentru cine face I/O ca sa punem in log
+                    // Check for whom the I/O is being handled to log it
                     UserProcess targetIo = sysProcess.getCurrentlyProcessingIo();
-                    String targetStr = (targetIo != null) ? " pentru a rezolva I/O la Procesul " + targetIo.getId() : "";
-                    engine.logEvent(globalTime, "SCHEDULER", "VIP-ul a preluat CPU " + cpu.getId() + targetStr + ".");
+
+                    String targetStr = (targetIo != null)
+                            ? " to resolve I/O for Process " + targetIo.getId()
+                            : "";
+
+                    engine.logEvent(globalTime, "SCHEDULER",
+                            "VIP process took CPU " + cpu.getId() + targetStr + ".");
+
                     continue;
                 }
 
                 Process nextP = extractNextProcess(cpu.getId());
 
                 if (nextP != null) {
+
                     if (memManager.isProcessInRam(nextP)) {
+                        boolean hadAffinity =
+                                (nextP.getLastProcessorId() == cpu.getId());
+
                         cpu.assignProcess(nextP, timeSlice);
                         memManager.markAsRecentlyUsed(nextP);
 
-                        boolean hadAffinity = (nextP.getLastProcessorId() == cpu.getId());
-                        engine.logEvent(globalTime, "SCHEDULER", "Procesul " + nextP.getId() + " a preluat CPU " + cpu.getId() + (hadAffinity ? " (Afinitate respectata)" : "") + ".");
+                        engine.logEvent(globalTime, "SCHEDULER",
+                                "Process " + nextP.getId() +
+                                        " took CPU " + cpu.getId() +
+                                        (hadAffinity ? " (Affinity respected)" : "") +
+                                        ".");
+
                     } else {
+
                         if (!memManager.isSwapping()) {
-                            engine.logEvent(globalTime, "SCHEDULER", "Procesul " + nextP.getId() + " nu este in RAM. Se solicita SWAP-IN.");
-                            memManager.startLoadingProcessToRam(nextP, globalTime, engine);
+
+                            engine.logEvent(globalTime, "SCHEDULER",
+                                    "Process " + nextP.getId() +
+                                            " is not in RAM. SWAP-IN requested.");
+
+                            memManager.startLoadingProcessToRam(
+                                    nextP, globalTime, engine);
+
                             nextP.setState(ProcessState.SWAPPING);
+
                         } else {
-                            addProcess(nextP); // Disk ocupat
+                            addProcess(nextP); // Disk busy
                         }
                     }
                 }
             }
         }
     }
+
     /**
-     * Adauga un proces direct in fata cozii, dandu-i prioritate maxima.
-     * Util pentru procesele care abia au fost aduse in RAM (pentru a evita thrashing-ul).
+     * Adds a process directly to the front of the queue, giving it maximum priority.
+     * Useful for processes that were just loaded into RAM (to avoid thrashing).
      */
     public void addProcessToFront(Process p) {
         if (size < capacity) {
-            // Mutam head-ul cu o pozitie la stanga (circular)
+
+            // Move head one position to the left (circular)
             head = (head - 1 + capacity) % capacity;
+
             readyQueue[head] = p;
             size++;
+
             p.setState(ProcessState.READY);
+
         } else {
-            System.out.println("Eroare CRITICA: Scheduler Ready Queue este plina!");
+            System.out.println("CRITICAL ERROR: Scheduler Ready Queue is full!");
         }
     }
 }
