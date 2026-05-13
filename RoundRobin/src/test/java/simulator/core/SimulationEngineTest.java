@@ -15,7 +15,6 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 /**
- * Integration test suite for the SimulationEngine.
  * It uses Mockito for dependency isolation and Java Reflection to access private members.
  */
 public class SimulationEngineTest {
@@ -42,7 +41,7 @@ public class SimulationEngineTest {
         when(mockConfig.getSystemProcessPeriod()).thenReturn(10);
         when(mockConfig.getTimeSlice()).thenReturn(5);
 
-        // 2. Setup a dummy user process starting at T=0
+        // 2. Setup a user process starting at T=0
         mockUserProcess = mock(UserProcess.class);
         when(mockUserProcess.getReleaseTime()).thenReturn(0);
         when(mockUserProcess.getId()).thenReturn(1);
@@ -107,9 +106,12 @@ public class SimulationEngineTest {
     @Test
     @DisplayName("Coverage: New Launch - Release time matches but state is NOT NEW")
     void testExecuteTick_NewLaunch_StateNotNew() throws Exception {
+        //arrange
         when(mockUserProcess.getReleaseTime()).thenReturn(0);
         when(mockUserProcess.getCurrentState()).thenReturn(ProcessState.READY);
+        //act
         invokeExecuteTick();
+        //assert
         verify(mockScheduler, never()).addProcess(mockUserProcess);
     }
 
@@ -196,13 +198,12 @@ public class SimulationEngineTest {
     @Test
     @DisplayName("Coverage: Processor - Normal Process running (No Preemption, No IO)")
     void testCpuLogic_NormalExecution_NoPreemption() throws Exception {
-        // Fix pentru Screenshot 1049: Testăm un tick curat (false la time slice expired)
         when(mockUserProcess.getCurrentState()).thenReturn(ProcessState.READY);
         when(mockCpu.isIdle()).thenReturn(false);
         when(mockCpu.getCurrentProcess()).thenReturn(mockUserProcess);
         when(mockUserProcess.getCurrentState()).thenReturn(ProcessState.RUNNING);
         when(mockUserProcess.isCurrentlyDoingIo()).thenReturn(false);
-        when(mockCpu.isTimeSliceExpired()).thenReturn(false); // Ramura FALSE
+        when(mockCpu.isTimeSliceExpired()).thenReturn(false);
 
         invokeExecuteTick();
         // CPU should NOT evict the process if it's still healthy and has time
