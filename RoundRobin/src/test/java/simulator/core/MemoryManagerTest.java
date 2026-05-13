@@ -17,7 +17,6 @@ class MemoryManagerTest {
         engineMock = mock(SimulationEngine.class);
     }
 
-    // --- Metodă ajutătoare pentru a încărca rapid un proces în RAM în teste ---
     private void fullyLoadProcess(MemoryManager memManager, Process p) {
         memManager.startLoadingProcessToRam(p, 1, engineMock);
         while (memManager.isSwapping()) {
@@ -65,14 +64,13 @@ class MemoryManagerTest {
         Process p1 = createMockProcess(1, 300);
         Process p2 = createMockProcess(2, 300);
         Process p3 = createMockProcess(3, 300);
-        Process p4 = createMockProcess(4, 300); // This will trigger eviction (Total 1200 > 1000)
+        Process p4 = createMockProcess(4, 300);
 
         fullyLoadProcess(memManager, p1);
         fullyLoadProcess(memManager, p2);
         fullyLoadProcess(memManager, p3);
 
-        // At this point, order in RAM is: P1(0), P2(1), P3(2)
-        // We mark P1 as recently used. It should move to the end. New order: P2(0), P3(1), P1(2)
+        // P2(0), P3(1), P1(2)
         memManager.markAsRecentlyUsed(p1);
 
         // Edge case: Mark a process that is already at the end (should do nothing)
@@ -81,8 +79,6 @@ class MemoryManagerTest {
         // Edge case: Mark a process that is not in RAM (should not crash)
         memManager.markAsRecentlyUsed(p4);
 
-        // Now we load P4. Since RAM is full (900 + 300 > 1000), it will evict the one at index 0.
-        // Because of our LRU mark, P2 is at index 0 and should be evicted, NOT P1.
         fullyLoadProcess(memManager, p4);
 
         assertFalse(memManager.isProcessInRam(p2), "Process P2 should have been evicted (Least Recently Used).");
@@ -94,9 +90,9 @@ class MemoryManagerTest {
     @Test
     @DisplayName("Test Swap-In calculation: Should calculate ticks correctly and handle 0 memory fallback")
     void testStartLoadingProcessToRam_TickCalculations() {
-        MemoryManager memManager = new MemoryManager(1000, 100); // 100 units per tick
+        MemoryManager memManager = new MemoryManager(1000, 100);
 
-        // Scenario 1: Normal calculation (250 / 100 = 2.5 -> ceil = 3 ticks)
+        // (250 / 100 = 2.5 -> ceil = 3 ticks)
         Process p1 = createMockProcess(1, 250);
         memManager.startLoadingProcessToRam(p1, 10, engineMock);
 
@@ -106,8 +102,6 @@ class MemoryManagerTest {
         assertNull(memManager.executeSwapTick(), "Tick 2 - Should not finish yet.");
         assertEquals(p1, memManager.executeSwapTick(), "Tick 3 - Should finish and return p1.");
 
-        // Scenario 2: Process requires 0 memory (or transfer rate is extremely high).
-        // Covers the `if (this.swapTicksRemaining <= 0) this.swapTicksRemaining = 1;` branch.
         Process p2 = createMockProcess(2, 0);
         memManager.startLoadingProcessToRam(p2, 10, engineMock);
 
@@ -120,7 +114,6 @@ class MemoryManagerTest {
         MemoryManager memManager = new MemoryManager(1000, 100);
 
         // Calling eviction when RAM is completely empty
-        // Covers `if (ramProcessCount == 0) return;`
         assertDoesNotThrow(() -> memManager.evictLeastRecentlyUsed(1, engineMock),
                 "Evicting from an empty RAM should not throw exceptions.");
     }
@@ -136,21 +129,14 @@ class MemoryManagerTest {
         fullyLoadProcess(memManager, p1);
         fullyLoadProcess(memManager, p2);
 
-        // RAM used is 800/1000. P1 and P2 are loaded.
-        // We try to load a massive process (requires 900).
-        // 800 + 900 > 1000 (Requires eviction). Evicts P1.
-        // 400 + 900 > 1000 (Still requires eviction). Evicts P2.
-        // 0 + 900 < 1000 (Fits).
         Process massiveProcess = createMockProcess(3, 900);
 
         fullyLoadProcess(memManager, massiveProcess);
 
-        // Assert
         assertFalse(memManager.isProcessInRam(p1), "P1 should be evicted.");
         assertFalse(memManager.isProcessInRam(p2), "P2 should be evicted.");
         assertTrue(memManager.isProcessInRam(massiveProcess), "Massive process should be loaded.");
 
-        // Verify logging for multiple evictions
         verify(engineMock, times(2)).logEvent(anyInt(), eq("MEMORY"), contains("LRU Eviction"));
     }
 }
