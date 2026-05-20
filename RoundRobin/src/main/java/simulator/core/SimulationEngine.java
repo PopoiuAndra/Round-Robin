@@ -52,6 +52,9 @@ public class SimulationEngine {
      * @param processes Array of processes read and ready for launch.
      */
     public SimulationEngine(SimulationConfig config, UserProcess[] processes) {
+        assert config != null : "Simulation configuration source of truth cannot be null";
+        assert processes != null && processes.length > 0 : "Processes configuration array cannot be empty";
+
         this.config = config;
         this.allUserProcesses = processes;
 
@@ -73,6 +76,8 @@ public class SimulationEngine {
      * @param listener Object implementing the SimulationEventListener interface.
      */
     public void addEventListener(SimulationEventListener listener) {
+        assert listener != null : "Cannot append null event listener instances";
+
         if (listenerCount < listeners.length) {
             listeners[listenerCount++] = listener;
         }
@@ -124,8 +129,12 @@ public class SimulationEngine {
         log("=== Start Simulation ===");
 
         while (completedProcesses < allUserProcesses.length) {
+            int previousTime = globalTime;
+
             executeTick();
             globalTime++;
+
+            assert globalTime == previousTime + 1 : "Simulation clock failed to step forward monotonically";
 
             // Infinite loop safety
             if (globalTime > 20000) {
@@ -144,6 +153,8 @@ public class SimulationEngine {
      * and calls the scheduler.
      */
     private void executeTick() {
+        int previousCompleted = completedProcesses;
+
         // 1. Check for new launches
         for (int i = 0; i < allUserProcesses.length; i++) {
             if (allUserProcesses[i].getReleaseTime() == globalTime && allUserProcesses[i].getCurrentState() == ProcessState.NEW) {
@@ -227,6 +238,9 @@ public class SimulationEngine {
 
         // 5. Call the Scheduler
         scheduler.schedule(processors, systemProcess, memoryManager, config.getTimeSlice(), globalTime, this);
+
+        // Global Postcondition: Terminated process counter must never decrease
+        assert completedProcesses >= previousCompleted : "Logical inconsistency: completed process counter dropped during step resolution";
     }
 
     /**

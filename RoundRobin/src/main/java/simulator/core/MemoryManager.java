@@ -37,12 +37,25 @@ public class MemoryManager implements MemoryReplacementStrategy {
     private int swapTicksRemaining = 0;
 
     /**
+     * Invariant checker to maintain structural integrity of RAM tracking.
+     */
+    private boolean checkMemoryInvariant() {
+        if (usedRam < 0 || usedRam > totalRam) return false;
+        if (ramProcessCount < 0 || ramProcessCount > ramProcesses.length) return false;
+        if (swapTicksRemaining < 0) return false;
+        return true;
+    }
+
+    /**
      * Constructs the memory manager.
      *
      * @param totalRam         Maximum physical memory.
      * @param diskTransferRate Memory copy speed per tick.
      */
     public MemoryManager(int totalRam, double diskTransferRate) {
+        assert totalRam > 0 : "Total RAM must be greater than 0";
+        assert diskTransferRate > 0 : "Disk transfer rate must be positive";
+
         this.totalRam = totalRam;
         this.diskTransferRate = diskTransferRate;
         this.usedRam = 0;
@@ -50,6 +63,8 @@ public class MemoryManager implements MemoryReplacementStrategy {
 
         // Assume a maximum of 1000 simultaneous processes in RAM
         this.ramProcesses = new Process[1000];
+
+        assert checkMemoryInvariant() : "Memory manager initialized in an invalid state";
     }
 
     /**
@@ -59,6 +74,8 @@ public class MemoryManager implements MemoryReplacementStrategy {
      * @return true if the process is in RAM, false otherwise.
      */
     public boolean isProcessInRam(Process p) {
+        assert p != null : "Cannot check null process in RAM";
+
         for (int i = 0; i < ramProcessCount; i++) {
             if (ramProcesses[i].getId() == p.getId()) {
                 return true;
@@ -77,6 +94,9 @@ public class MemoryManager implements MemoryReplacementStrategy {
      * @param p The process that was just accessed/executed.
      */
     public void markAsRecentlyUsed(Process p) {
+        assert p != null : "Cannot mark null process as MRU";
+        assert isProcessInRam(p) : "Process must be in RAM to be marked as recently used";
+        assert checkMemoryInvariant() : "Memory invariant broken before MRU update";
 
         int index = -1;
 
@@ -100,16 +120,21 @@ public class MemoryManager implements MemoryReplacementStrategy {
 
             // Place the accessed process at the last position
             ramProcesses[ramProcessCount - 1] = temp;
+
+            assert ramProcesses[ramProcessCount - 1].getId() == p.getId() : "Process was not successfully shifted to the MRU position";
         }
+
+        assert checkMemoryInvariant() : "Memory invariant broken after MRU update";
     }
 
     /**
      * Starts loading a process from Disk into RAM.
      * If RAM is full, LRU eviction is performed first.
      */
-    public void startLoadingProcessToRam(Process p,
-                                         int globalTime,
-                                         SimulationEngine engine) {
+    public void startLoadingProcessToRam(Process p, int globalTime, SimulationEngine engine) {
+        assert p != null : "Cannot swap in a null process";
+        assert p.getRequiredMemory() <= totalRam : "Process memory requirement exceeds total system RAM";
+        assert !isSwapping() : "Cannot start a new swap-in; disk is currently busy";
 
         while (usedRam + p.getRequiredMemory() > totalRam) {
             evictLeastRecentlyUsed(globalTime, engine);
@@ -133,15 +158,20 @@ public class MemoryManager implements MemoryReplacementStrategy {
                         + swapTicksRemaining
                         + " ticks)."
         );
+
+        assert isSwapping() : "Swap-in sequence failed to initialize";
     }
 
     @Override
-    public void evictLeastRecentlyUsed(int globalTime,
-                                       SimulationEngine engine) {
+    public void evictLeastRecentlyUsed(int globalTime, SimulationEngine engine) {
+        assert ramProcessCount > 0 : "Cannot evict from RAM; no processes currently resident";
+        assert checkMemoryInvariant() : "Memory invariant broken before eviction";
 
-        if (ramProcessCount == 0) return;
-
+        int previousCount = ramProcessCount;
+        int previousUsedRam = usedRam;
         Process victim = ramProcesses[0];
+
+        assert victim != null : "LRU Victim cannot be null";
 
         usedRam -= victim.getRequiredMemory();
 
@@ -160,6 +190,10 @@ public class MemoryManager implements MemoryReplacementStrategy {
                         + victim.getId()
                         + " was moved to Disk (LRU Eviction)."
         );
+
+        assert ramProcessCount == previousCount - 1 : "Process count did not decrement correctly";
+        assert usedRam == previousUsedRam - victim.getRequiredMemory() : "RAM usage tracking did not release evicted memory";
+        assert checkMemoryInvariant() : "Memory invariant broken after eviction";
     }
 
     /**
@@ -170,12 +204,14 @@ public class MemoryManager implements MemoryReplacementStrategy {
      *         or null if loading is still in progress / nothing is loading.
      */
     public Process executeSwapTick() {
+        assert checkMemoryInvariant() : "Memory invariant broken before swap tick";
 
         if (swappingProcess != null) {
-
+            int previousTicks = swapTicksRemaining;
             swapTicksRemaining--;
 
             if (swapTicksRemaining <= 0) {
+                assert usedRam + swappingProcess.getRequiredMemory() <= totalRam : "Incongruent allocation: not enough RAM available upon disk completion";
 
                 // Transfer completed
                 addProcessToRam(swappingProcess);
@@ -185,7 +221,10 @@ public class MemoryManager implements MemoryReplacementStrategy {
                 swappingProcess = null;
                 swapTicksRemaining = 0;
 
+                assert checkMemoryInvariant() : "Memory invariant broken after swap transfer resolution";
                 return finishedProcess;
+            } else {
+                assert swapTicksRemaining == previousTicks - 1 : "Disk timer did not decrement correctly";
             }
         }
 
@@ -205,6 +244,9 @@ public class MemoryManager implements MemoryReplacementStrategy {
      * Adds a process to RAM, assuming enough space already exists.
      */
     private void addProcessToRam(Process p) {
+        assert p != null : "Cannot add null process references directly to RAM array";
+        assert usedRam + p.getRequiredMemory() <= totalRam : "RAM allocation violation within inner helper execution";
+
         ramProcesses[ramProcessCount] = p;
         ramProcessCount++;
 

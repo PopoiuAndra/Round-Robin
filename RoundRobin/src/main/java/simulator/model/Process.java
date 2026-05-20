@@ -33,6 +33,9 @@ public abstract class Process {
      * @param requiredMemory The memory required for execution.
      */
     public Process(int id, int requiredMemory) {
+        assert id >= 0 : "Process ID must be non-negative";
+        assert requiredMemory >= 0 : "Required memory must be non-negative";
+
         this.id = id;
         this.requiredMemory = requiredMemory;
         this.currentState = ProcessState.NEW;
@@ -71,6 +74,8 @@ public abstract class Process {
      * @param state The new state of the process.
      */
     public void setState(ProcessState state) {
+        assert state != null: "Process state cannot be null";
+
         this.currentState = state;
     }
 
@@ -89,6 +94,8 @@ public abstract class Process {
      * @param lastProcessorId The allocated processor ID.
      */
     public void setLastProcessorId(int lastProcessorId) {
+        assert lastProcessorId >= -1 : "Processor ID must be valid (-1 or positive)";
+
         this.lastProcessorId = lastProcessorId;
     }
 

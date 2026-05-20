@@ -22,6 +22,7 @@ public class Processor {
      * @param id The processor's identifier.
      */
     public Processor(int id) {
+        assert id >= 0 : "Processor ID must be non-negative";
         this.id = id;
         this.currentProcess = null;
         this.timeSliceRemaining = 0;
@@ -72,6 +73,10 @@ public class Processor {
      * @param timeSlice The maximum time quantum allowed for continuous execution.
      */
     public void assignProcess(Process process, int timeSlice) {
+        assert process != null : "Cannot assign a null process to CPU";
+        assert timeSlice > 0 : "Time slice quantum must be greater than 0";
+        assert isIdle() : "Cannot assign process; CPU is currently occupied";
+
         this.currentProcess = process;
         this.timeSliceRemaining = timeSlice;
 
@@ -80,6 +85,9 @@ public class Processor {
             process.setLastProcessorId(this.id);
             System.out.println("    [CPU " + this.id + "] picked up Process " + process.getId());
         }
+
+        assert this.currentProcess.getCurrentState() == ProcessState.RUNNING : "Assigned process must be in RUNNING state";
+        assert this.currentProcess.getLastProcessorId() == this.id : "Process affinity ID must match this processor ID";
     }
 
     /**
@@ -88,9 +96,15 @@ public class Processor {
      * @return The process that was just removed, so it can be put back in the queue or terminated.
      */
     public Process evictProcess() {
+        assert !isIdle() : "Cannot evict from an idle processor";
+
         Process evicted = this.currentProcess;
         this.currentProcess = null;
         this.timeSliceRemaining = 0;
+
+        assert isIdle() : "Processor must be idle after eviction";
+        assert timeSliceRemaining == 0 : "Time slice remaining must be reset to 0";
+
         return evicted;
     }
 
@@ -102,8 +116,12 @@ public class Processor {
      */
     public void executeTick(int currentTime) {
         if (currentProcess != null) {
+            int previousSlice = timeSliceRemaining;
+
             currentProcess.executeTick(currentTime);
             timeSliceRemaining--;
+
+            assert timeSliceRemaining == previousSlice - 1 : "Time slice must decrement by exactly 1";
         }
     }
 }

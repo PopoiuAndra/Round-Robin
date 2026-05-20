@@ -29,6 +29,16 @@ public class SystemProcess extends Process {
     private UserProcess lastFinishedIoProcess = null;
 
     /**
+     * Helper method to verify the integrity of the circular buffer.
+     */
+    private boolean checkQueueInvariant() {
+        if (queueSize < 0 || queueSize > maxQueueCapacity) return false;
+        if (head < 0 || head >= maxQueueCapacity) return false;
+        if (tail < 0 || tail >= maxQueueCapacity) return false;
+        return true;
+    }
+
+    /**
      * Constructs the system process.
      *
      * @param id            The unique identifier (usually 0).
@@ -36,9 +46,14 @@ public class SystemProcess extends Process {
      */
     public SystemProcess(int id, int releasePeriod) {
         super(id, 0); // The system process is always in RAM, memory requirement is 0
+
+        assert releasePeriod > 0 : "Release period must be greater than 0";
+
         this.releasePeriod = releasePeriod;
         this.ticksUntilNextRelease = releasePeriod;
         this.ioQueue = new UserProcess[maxQueueCapacity];
+
+        assert checkQueueInvariant() : "Queue structure is invalid at initialization";
     }
 
     /**
@@ -48,11 +63,20 @@ public class SystemProcess extends Process {
      * @param process The user process that blocked for I/O.
      */
     public void requestSystemCall(UserProcess process) {
+        assert process != null : "Cannot queue a null process";
+        assert queueSize < maxQueueCapacity : "I/O Queue Overflow!";
+        assert checkQueueInvariant() : "Queue invariant violated before insertion";
+
+        int previousSize = queueSize;
+
         if (queueSize < maxQueueCapacity) {
             ioQueue[tail] = process;
             tail = (tail + 1) % maxQueueCapacity;
             queueSize++;
         }
+
+        assert queueSize == previousSize + 1 : "Queue size must increase by 1";
+        assert checkQueueInvariant() : "Queue invariant violated after insertion";
     }
 
     /**
@@ -87,10 +111,17 @@ public class SystemProcess extends Process {
      */
     @Override
     public void executeTick(int currentTime) {
+        assert currentTime >= 0 : "Current time cannot be negative";
+        assert checkQueueInvariant() : "Queue invariant violated before executeTick";
+
         lastFinishedIoProcess = null; // Reset at every tick
 
         if (queueSize > 0) {
             UserProcess currentIoProcess = ioQueue[head];
+            assert currentIoProcess != null : "Process at queue head cannot be null";
+
+            int previousSize = queueSize;
+
             currentIoProcess.executeTick(currentTime);
 
             // Check if it finished I/O or the entire sequence
@@ -101,11 +132,15 @@ public class SystemProcess extends Process {
                 ioQueue[head] = null;
                 head = (head + 1) % maxQueueCapacity;
                 queueSize--;
+
+                assert queueSize == previousSize - 1 : "Queue size must decrease by 1 upon completion";
             }
         } else {
             // If it has nothing to do, the VIP "goes to sleep" and releases its processor
             this.setState(ProcessState.WAITING_IO);
         }
+
+        assert checkQueueInvariant() : "Queue invariant violated after executeTick";
     }
 
     /**
@@ -113,6 +148,8 @@ public class SystemProcess extends Process {
      */
     public UserProcess getCurrentlyProcessingIo() {
         if (queueSize > 0) {
+            assert ioQueue[head] != null : "Active head of queue cannot hold a null reference";
+
             return ioQueue[head];
         }
         return null;

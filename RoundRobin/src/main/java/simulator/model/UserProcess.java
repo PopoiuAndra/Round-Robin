@@ -36,11 +36,18 @@ public class UserProcess extends Process {
      */
     public UserProcess(int id, int memory, int releaseTime, int[] sequence) {
         super(id, memory);
+
+        assert releaseTime >= 0 : "Release time must be non-negative";
+        assert sequence != null : "Execution sequence array cannot be null";
+        assert sequence.length > 0 : "Execution sequence must contain at least one burst";
+
         this.releaseTime = releaseTime;
         this.executionSequence = sequence;
 
         // Initialize remaining time with the first value in the sequence (if it exists)
         if (sequence != null && sequence.length > 0) {
+            assert sequence[0] > 0 : "First burst duration must be greater than 0";
+
             this.remainingTicksInCurrentBurst = sequence[0];
         } else {
             this.remainingTicksInCurrentBurst = 0;
@@ -76,6 +83,12 @@ public class UserProcess extends Process {
      */
     @Override
     public void executeTick(int currentTime) {
+        assert currentTime >= 0 : "Simulation time cannot be negative";
+
+        // Save state for postcondition checking
+        int previousTicks = remainingTicksInCurrentBurst;
+        int previousIndex = currentSequenceIndex;
+
         // If we have already exceeded the sequence, the process is terminated
         if (executionSequence == null || currentSequenceIndex >= executionSequence.length) {
             if (this.currentState != ProcessState.TERMINATED) {
@@ -97,10 +110,15 @@ public class UserProcess extends Process {
 
                 // Alternate between CPU execution and system call (I/O)
                 isCurrentlyDoingIo = !isCurrentlyDoingIo;
+
+                assert (currentSequenceIndex % 2 != 0) == isCurrentlyDoingIo : "Sequence index parity must match the I/O state";
             } else {
                 // No more elements, so the process has finished its execution
                 this.setState(ProcessState.TERMINATED);
             }
+        } else {
+            assert remainingTicksInCurrentBurst == previousTicks - 1 : "Ticks should decrement by exactly 1";
+            assert currentSequenceIndex == previousIndex : "Sequence index should remain unchanged during burst";
         }
     }
 
