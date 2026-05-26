@@ -5,8 +5,17 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * Unit tests for {@link UserProcess} covering construction, execution
+ * behavior, edge cases and basic invariants such as processor affinity
+ * and {@code toString()} formatting.
+ */
 class UserProcessTest {
-
+    /**
+     * Verifies that a {@code UserProcess} constructed with valid values
+     * initializes all fields correctly (id, required memory, release time,
+     * initial state and IO flag).
+     */
     @Test
     @DisplayName("Test construction: All fields should be initialized correctly with valid parameters")
     void testInitialization_ShouldInitializeAllFieldsCorrectly() {
@@ -24,6 +33,10 @@ class UserProcessTest {
         assertFalse(process.isCurrentlyDoingIo(), "Process should initially start in CPU burst, not IO.");
     }
 
+    /**
+     * Verifies that {@link UserProcess#executeTick(int)} handles null or
+     * empty sequences by immediately transitioning to {@code TERMINATED}.
+     */
     @Test
     @DisplayName("Test safety: Should handle null or empty sequences by terminating gracefully")
     void testExecuteTick_WithInvalidSequence_ShouldTerminateImmediately() {
@@ -36,6 +49,10 @@ class UserProcessTest {
         assertEquals(ProcessState.TERMINATED, processWithEmptySeq.getCurrentState(), "Process with empty sequence should terminate on the first tick.");
     }
 
+    /**
+     * Tests that a process alternates correctly between CPU and IO bursts
+     * according to its sequence and ultimately terminates.
+     */
     @Test
     @DisplayName("Test execution flow: Process should alternate between CPU and IO bursts correctly")
     void testExecuteTick_ShouldAlternateCpuAndIoCorrectly() {
@@ -56,6 +73,9 @@ class UserProcessTest {
         assertEquals(ProcessState.TERMINATED, process.getCurrentState(), "Process should be TERMINATED after the entire sequence ends.");
     }
 
+    /**
+     * Ensures negative burst values trigger immediate transitions to IO.
+     */
     @Test
     @DisplayName("Test edge case: Negative burst values should trigger immediate state transition")
     void testExecuteTick_WithNegativeValuesInSequence_ShouldTransitionImmediately() {
@@ -65,6 +85,9 @@ class UserProcessTest {
         assertTrue(process.isCurrentlyDoingIo(), "A negative CPU burst should cause an immediate switch to IO mode.");
     }
 
+    /**
+     * Verifies processor affinity storage via {@code setLastProcessorId/getLastProcessorId}.
+     */
     @Test
     @DisplayName("Test affinity: Should correctly store and retrieve the last processor identifier")
     void testProcessorAffinity_ShouldStoreAndRetrieveLastProcessorId() {
@@ -76,6 +99,10 @@ class UserProcessTest {
         assertEquals(3, process.getLastProcessorId(), "Process should remember the last processor ID it was assigned to.");
     }
 
+    /**
+     * Confirms calling {@code executeTick} on a terminated process is a no-op
+     * and does not throw exceptions.
+     */
     @Test
     @DisplayName("Test resilience: Calling executeTick on a terminated process should not throw exceptions")
     void testExecuteTick_WhenAlreadyTerminated_ShouldNotThrowAndStayTerminated() {
@@ -88,6 +115,10 @@ class UserProcessTest {
         assertEquals(ProcessState.TERMINATED, process.getCurrentState(), "Process state should remain TERMINATED even after extra ticks.");
     }
 
+    /**
+     * Checks that {@code toString()} contains the expected identifying
+     * fields and handles null sequences gracefully.
+     */
     @Test
     @DisplayName("Test debug: toString should return a formatted string containing key process details")
     void testToString_ShouldReturnFormattedStringWithDetails() {

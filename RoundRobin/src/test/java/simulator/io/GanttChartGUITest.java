@@ -8,6 +8,10 @@ import java.awt.image.BufferedImage;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * Unit tests for {@link GanttChartGUI} focusing on CPU/disk block handling,
+ * rendering behavior and internal execution block creation.
+ */
 public class GanttChartGUITest {
 
     private GanttChartGUI gui;
@@ -20,6 +24,10 @@ public class GanttChartGUITest {
 
     @Test
     @DisplayName("Test onCpuExecution - Full branch coverage")
+    /**
+     * Exercises multiple branches of {@code onCpuExecution} to ensure
+     * block creation and extension behave correctly.
+     */
     public void testOnCpuExecutionCoverage() {
         // Branch 1: Add a new block to an empty CPU
         gui.onCpuExecution(0, 10, 5);
@@ -42,6 +50,10 @@ public class GanttChartGUITest {
 
     @Test
     @DisplayName("Test onDiskExecution - Full branch coverage")
+    /**
+     * Exercises disk-related branches of the GUI to validate block
+     * handling and maxTick updates.
+     */
     public void testOnDiskExecutionCoverage() {
         // Branch 1: First disk block
         gui.onDiskExecution(1, 1);
@@ -63,6 +75,10 @@ public class GanttChartGUITest {
 
     @Test
     @DisplayName("Test Rendering Logic (GanttPanel) - Deep Coverage")
+    /**
+     * Populates the GUI and invokes painting to indirectly test drawing
+     * logic without opening a visible window.
+     */
     public void testPaintComponent() {
         // Populate data to activate all drawing loops (CPU, Disk, Timeline)
         gui.onCpuExecution(0, 0, 0); // System process block (SYS)
@@ -87,6 +103,10 @@ public class GanttChartGUITest {
 
     @Test
     @DisplayName("Test ExecutionBlock - Constructor")
+    /**
+     * Ensures internal ExecutionBlock objects are created and extended
+     * correctly via CPU execution events.
+     */
     public void testExecutionBlockInternal() {
         // Test the constructor of the internal ExecutionBlock class through GUI behavior
         // This is done automatically through onCpuExecution calls, ensuring objects are created correctly

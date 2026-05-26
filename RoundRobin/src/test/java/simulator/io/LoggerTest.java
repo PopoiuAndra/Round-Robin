@@ -10,6 +10,10 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * Unit tests for {@link Logger} verifying basic write behavior, robustness
+ * when writers are unavailable, and coverage of no-op interface methods.
+ */
 public class LoggerTest {
 
     @TempDir
@@ -17,6 +21,10 @@ public class LoggerTest {
 
     @Test
     @DisplayName("Test Logger - Full success coverage (Constructor, onLogMessage, close)")
+    /**
+     * Integration-style test for {@link Logger}: verifies header, message
+     * writing and footer on close.
+     */
     public void testLoggerFullSuccess() throws IOException {
         Path logPath = tempDir.resolve("output_full.txt");
         Logger logger = new Logger(logPath.toString());
@@ -36,6 +44,9 @@ public class LoggerTest {
 
     @Test
     @DisplayName("Test Logger - Empty interface methods coverage (onCpuExecution, onDiskExecution)")
+    /**
+     * Executes no-op interface methods to ensure they do not throw.
+     */
     public void testEmptyInterfaceMethods() {
         Path logPath = tempDir.resolve("empty_methods.txt");
         Logger logger = new Logger(logPath.toString());
@@ -51,6 +62,10 @@ public class LoggerTest {
 
     @Test
     @DisplayName("Test Logger - Error branch coverage (Catch IOException in Constructor)")
+    /**
+     * Forces constructor failure path (invalid path) and ensures methods
+     * handle null writer gracefully.
+     */
     public void testLoggerConstructorError() {
         // Use an invalid path (empty string) to force the catch block in the constructor
         String invalidPath = "";
@@ -68,6 +83,10 @@ public class LoggerTest {
 
     @Test
     @DisplayName("Test Logger - Null Writer Protection (onLogMessage method)")
+    /**
+     * Verifies that calling {@code onLogMessage} after closing the
+     * logger does not throw an exception when the writer is null.
+     */
     public void testOnLogMessageNullWriter() {
         // Create a logger and close it immediately to simulate an inactive writer
         Path logPath = tempDir.resolve("null_test.txt");

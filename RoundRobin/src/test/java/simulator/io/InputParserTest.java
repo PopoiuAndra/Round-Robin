@@ -10,6 +10,12 @@ import java.io.FileWriter;
 import java.io.IOException;
 
 import static org.junit.jupiter.api.Assertions.*;
+
+/**
+ * Unit tests for {@link InputParser} ensuring robust parsing of irregular
+ * input files, handling of missing files, and correct extraction of
+ * configuration and process data.
+ */
 public class InputParserTest {
 
     private InputParser parser;
@@ -21,6 +27,10 @@ public class InputParserTest {
 
     @Test
     @DisplayName("Test line parsing with multiple spaces and tabs")
+    /**
+     * Writes a temporary input file with irregular spacing and characters
+     * and verifies the parser extracts config and process records.
+     */
     public void testParseLineManual() throws Exception {
         // We test the private logic indirectly via parseFile to ensure the manual character-by-character extraction works
         // Create a temporary test file
@@ -56,6 +66,10 @@ public class InputParserTest {
 
     @Test
     @DisplayName("Test non-existent file - Error Handling")
+    /**
+     * Verifies that parsing a non-existent file is handled without
+     * propagating exceptions and results in a null config.
+     */
     public void testFileNotFound() {
         // Verify that the parser handles missing files internally without throwing fatal exceptions
         assertDoesNotThrow(() -> parser.parseFile("non_existent_file.txt"), "The parser should handle IOExceptions internally");

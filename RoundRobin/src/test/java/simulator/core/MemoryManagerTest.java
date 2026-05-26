@@ -8,6 +8,10 @@ import simulator.model.Process;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+/**
+ * Unit tests for {@link MemoryManager} covering loading, eviction (LRU),
+ * swapping mechanics and resilience under edge conditions.
+ */
 class MemoryManagerTest {
 
     private SimulationEngine engineMock;
@@ -33,6 +37,9 @@ class MemoryManagerTest {
 
     @Test
     @DisplayName("Test initialization: Should start with empty RAM and no swapping")
+    /**
+     * Verifies initial MemoryManager state: empty RAM and no swapping.
+     */
     void testInitialization_ShouldBeEmpty() {
         MemoryManager memManager = new MemoryManager(1000, 100);
 
@@ -43,6 +50,10 @@ class MemoryManagerTest {
 
     @Test
     @DisplayName("Test isProcessInRam: Should correctly identify if a process is loaded")
+    /**
+     * Checks that {@code isProcessInRam} correctly reports loaded status
+     * after loading a process into memory.
+     */
     void testIsProcessInRam_ShouldReturnCorrectStatus() {
         MemoryManager memManager = new MemoryManager(1000, 100);
         Process p1 = createMockProcess(1, 200);
@@ -58,6 +69,10 @@ class MemoryManagerTest {
 
     @Test
     @DisplayName("Test LRU logic: markAsRecentlyUsed should shift elements correctly")
+    /**
+     * Exercises LRU behavior by marking processes as recently used and
+     * validating eviction choices.
+     */
     void testMarkAsRecentlyUsed_ShouldProtectProcessFromEviction() {
         MemoryManager memManager = new MemoryManager(1000, 100);
 
@@ -89,6 +104,10 @@ class MemoryManagerTest {
 
     @Test
     @DisplayName("Test Swap-In calculation: Should calculate ticks correctly and handle 0 memory fallback")
+    /**
+     * Validates swap-in tick calculation and minimum tick fallback for
+     * processes with zero memory requirement.
+     */
     void testStartLoadingProcessToRam_TickCalculations() {
         MemoryManager memManager = new MemoryManager(1000, 100);
 
@@ -110,6 +129,9 @@ class MemoryManagerTest {
 
     @Test
     @DisplayName("Test Eviction limits: evictLeastRecentlyUsed should safely handle empty RAM")
+    /**
+     * Ensures eviction logic handles empty RAM without throwing.
+     */
     void testEvictLeastRecentlyUsed_WithEmptyRam_ShouldReturnSafely() {
         MemoryManager memManager = new MemoryManager(1000, 100);
 
@@ -120,6 +142,10 @@ class MemoryManagerTest {
 
     @Test
     @DisplayName("Test Eviction logic: Should continuously evict until enough space is freed")
+    /**
+     * Simulates multiple evictions to free space for a large process and
+     * verifies eviction notifications are logged.
+     */
     void testStartLoadingProcessToRam_MultipleEvictionsNeeded() {
         MemoryManager memManager = new MemoryManager(1000, 100);
 

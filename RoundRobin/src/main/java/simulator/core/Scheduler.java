@@ -8,7 +8,6 @@ import simulator.model.Process;
  * Manages a manual queue of processes in the READY state.
  */
 public class Scheduler implements SchedulingStrategy {
-
     /** Manual circular queue for processes ready for execution. */
     private final Process[] readyQueue;
     private final int capacity = 1000;

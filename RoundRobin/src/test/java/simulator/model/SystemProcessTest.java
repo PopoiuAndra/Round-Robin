@@ -5,10 +5,18 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * Unit tests for {@link SystemProcess} validating periodic release,
+ * I/O handling, queue behavior and resilience under load.
+ */
 public class SystemProcessTest {
 
     @Test
     @DisplayName("Test construction: System process should initialize with zero memory and correct period")
+    /**
+     * Confirms that a {@code SystemProcess} initializes with zero memory
+     * requirement and the provided period.
+     */
     void testInitialization_ShouldInitializeAllFieldsCorrectly() {
         SystemProcess process = new SystemProcess(0, 5);
 
@@ -19,6 +27,10 @@ public class SystemProcessTest {
 
     @Test
     @DisplayName("Test periodic release: checkReleaseTime should trigger exactly when the period is reached")
+    /**
+     * Verifies periodic release behavior: {@code checkReleaseTime} returns
+     * true exactly when the configured period elapses.
+     */
     void testCheckReleaseTime_ShouldTriggerPeriodicallyBasedOnPeriod() {
         SystemProcess process = new SystemProcess(0, 3);
 
@@ -34,6 +46,10 @@ public class SystemProcessTest {
 
     @Test
     @DisplayName("Test I/O execution: System process should execute user I/O bursts and return them when finished")
+    /**
+     * Tests that the system process performs I/O servicing for user
+     * processes and reports finished I/O correctly.
+     */
     void testExecuteTick_ShouldProcessIoBurstAndIdentifyFinishedProcess() {
         SystemProcess systemProcess = new SystemProcess(0, 5);
         UserProcess userProcess = new UserProcess(1, 1024, 0, new int[]{1, 2, 1});
@@ -56,6 +72,10 @@ public class SystemProcessTest {
 
     @Test
     @DisplayName("Test idle behavior: System process should transition to WAITING_IO when the queue is empty")
+    /**
+     * Ensures the system process transitions to {@code WAITING_IO} when
+     * there are no pending I/O requests.
+     */
     void testExecuteTick_ShouldTransitionToWaitingIoWhenNoTasksPending() {
         SystemProcess process = new SystemProcess(0, 5);
         process.setState(ProcessState.RUNNING);
@@ -67,6 +87,10 @@ public class SystemProcessTest {
 
     @Test
     @DisplayName("Test resilience: Circular queue should handle requests up to capacity without crashing")
+    /**
+     * Exercises the internal queue to confirm it handles many enqueues
+     * without throwing exceptions.
+     */
     void testRequestSystemCall_ShouldHandleCapacityLimitsGracefully() {
         SystemProcess process = new SystemProcess(0, 10);
 
@@ -80,6 +104,9 @@ public class SystemProcessTest {
 
     @Test
     @DisplayName("Test queue peek: getCurrentlyProcessingIo should return null when the queue is empty")
+    /**
+     * Validates that peeking the I/O queue returns null when empty.
+     */
     void testGetCurrentlyProcessingIo_WhenQueueIsEmpty_ShouldReturnNull() {
         SystemProcess process = new SystemProcess(0, 5);
 
@@ -88,6 +115,10 @@ public class SystemProcessTest {
 
     @Test
     @DisplayName("Test queue peek: getCurrentlyProcessingIo should return the process at the head of the queue")
+    /**
+     * Confirms the head of the I/O queue is returned while processing
+     * and that completion advances the queue.
+     */
     void testGetCurrentlyProcessingIo_WhenQueueHasProcesses_ShouldReturnHeadProcess() {
         SystemProcess systemProcess = new SystemProcess(0, 5);
         UserProcess process1 = new UserProcess(1, 1024, 0, new int[]{1, 2});

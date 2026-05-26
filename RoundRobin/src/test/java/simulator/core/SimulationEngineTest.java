@@ -92,6 +92,10 @@ public class SimulationEngineTest {
      */
     @Test
     @DisplayName("Coverage: Event Listener Bounds & Loops (Array Full)")
+    /**
+     * Ensures adding many listeners doesn't break logging behavior when the
+     * internal listener array is full.
+     */
     void testEventListenerCapacity() {
         for (int i = 0; i < 15; i++) {
             engine.addEventListener(mock(SimulationEventListener.class));
@@ -105,6 +109,10 @@ public class SimulationEngineTest {
      */
     @Test
     @DisplayName("Coverage: New Launch - Release time matches but state is NOT NEW")
+    /**
+     * Verifies the engine does not relaunch a process whose state is not
+     * {@code NEW} even if the release time matches.
+     */
     void testExecuteTick_NewLaunch_StateNotNew() throws Exception {
         //arrange
         when(mockUserProcess.getReleaseTime()).thenReturn(0);
@@ -120,6 +128,10 @@ public class SimulationEngineTest {
      */
     @Test
     @DisplayName("Coverage: New Launch & VIP Wakeup (From waiting state)")
+    /**
+     * Checks that a new process launch also wakes up the VIP when it's
+     * waiting and due to run.
+     */
     void testExecuteTick_NewLaunch_VipWakeup() throws Exception {
         when(mockSysProcess.checkReleaseTime()).thenReturn(true);
         when(mockSysProcess.getCurrentState()).thenReturn(ProcessState.WAITING_IO);
@@ -134,6 +146,9 @@ public class SimulationEngineTest {
      */
     @Test
     @DisplayName("Coverage: VIP Wakeup (Skipped because already running)")
+    /**
+     * Ensures VIP wakeup logic is skipped when the VIP is already running.
+     */
     void testExecuteTick_VipWakeup_AlreadyRunning() throws Exception {
         when(mockUserProcess.getCurrentState()).thenReturn(ProcessState.READY);
         when(mockSysProcess.checkReleaseTime()).thenReturn(true);
@@ -148,6 +163,10 @@ public class SimulationEngineTest {
      */
     @Test
     @DisplayName("Coverage: Virtual Memory Swapping")
+    /**
+     * Tests the handling of disk swapping completion and subsequent
+     * scheduling of the loaded process.
+     */
     void testExecuteTick_Swapping() throws Exception {
         when(mockUserProcess.getCurrentState()).thenReturn(ProcessState.READY);
         when(mockMemManager.isSwapping()).thenReturn(true);
@@ -164,6 +183,10 @@ public class SimulationEngineTest {
      */
     @Test
     @DisplayName("Coverage: Processor - Normal Process Terminates")
+    /**
+     * Verifies that a process reaching {@code TERMINATED} is evicted from
+     * the CPU.
+     */
     void testCpuLogic_NormalTermination() throws Exception {
         when(mockUserProcess.getCurrentState()).thenReturn(ProcessState.READY);
         when(mockCpu.isIdle()).thenReturn(false);
@@ -179,6 +202,10 @@ public class SimulationEngineTest {
      */
     @Test
     @DisplayName("Coverage: Processor - Normal Process Blocks for I/O")
+    /**
+     * Ensures that when a running process requests I/O it is evicted and
+     * the system process receives the I/O request.
+     */
     void testCpuLogic_IoBlocking() throws Exception {
         when(mockUserProcess.getCurrentState()).thenReturn(ProcessState.READY);
         when(mockCpu.isIdle()).thenReturn(false);
@@ -197,6 +224,10 @@ public class SimulationEngineTest {
      */
     @Test
     @DisplayName("Coverage: Processor - Normal Process running (No Preemption, No IO)")
+    /**
+     * Confirms the CPU does not evict a running process when there is no
+     * preemption or blocking condition.
+     */
     void testCpuLogic_NormalExecution_NoPreemption() throws Exception {
         when(mockUserProcess.getCurrentState()).thenReturn(ProcessState.READY);
         when(mockCpu.isIdle()).thenReturn(false);
@@ -215,6 +246,10 @@ public class SimulationEngineTest {
      */
     @Test
     @DisplayName("Coverage: Processor - Preemption of UserProcess (Time Slice Expired)")
+    /**
+     * Tests Round-Robin preemption when a user process's time slice
+     * expires, expecting it to be returned to the scheduler.
+     */
     void testCpuLogic_PreemptionUserProcess() throws Exception {
         when(mockUserProcess.getCurrentState()).thenReturn(ProcessState.READY);
         when(mockCpu.isIdle()).thenReturn(false);
@@ -233,6 +268,10 @@ public class SimulationEngineTest {
      */
     @Test
     @DisplayName("Coverage: Processor - Preemption of SystemProcess (Trick for Dead Code)")
+    /**
+     * Forces an eviction path that returns the system process to test a
+     * rarely executed branch where VIP preemption occurs.
+     */
     void testCpuLogic_PreemptionSystemProcess() throws Exception {
         when(mockUserProcess.getCurrentState()).thenReturn(ProcessState.READY);
         when(mockUserProcess.isCurrentlyDoingIo()).thenReturn(false);
@@ -256,6 +295,10 @@ public class SimulationEngineTest {
      */
     @Test
     @DisplayName("Coverage: Processor - VIP Finished I/O (Target Terminates directly)")
+    /**
+     * Validates behavior when VIP finishes I/O and the target process is
+     * already terminated (should not re-add to scheduler).
+     */
     void testCpuLogic_Vip_FinishedIo_TargetTerminated() throws Exception {
         when(mockUserProcess.getCurrentState()).thenReturn(ProcessState.READY);
         when(mockCpu.isIdle()).thenReturn(false);
@@ -276,6 +319,10 @@ public class SimulationEngineTest {
      */
     @Test
     @DisplayName("Coverage: Processor - VIP Finished I/O (Target Resumes Execution)")
+    /**
+     * Ensures that when VIP completes I/O for a process that becomes
+     * READY, it is added back to the scheduler.
+     */
     void testCpuLogic_Vip_FinishedIo_TargetResumes() throws Exception {
         when(mockUserProcess.getCurrentState()).thenReturn(ProcessState.READY);
         when(mockCpu.isIdle()).thenReturn(false);
@@ -295,6 +342,10 @@ public class SimulationEngineTest {
      */
     @Test
     @DisplayName("Coverage: Processor - VIP Goes to sleep when queue is empty")
+    /**
+     * Checks that the VIP releases the CPU and goes to sleep when its
+     * queue is empty.
+     */
     void testCpuLogic_Vip_GoesToSleep() throws Exception {
         when(mockUserProcess.getCurrentState()).thenReturn(ProcessState.READY);
         when(mockCpu.isIdle()).thenReturn(false);
@@ -311,6 +362,10 @@ public class SimulationEngineTest {
      */
     @Test
     @DisplayName("Coverage: run() loop terminates naturally (No timeout needed)")
+    /**
+     * Verifies that the engine's main loop ends naturally when all
+     * processes complete and emits a finished log message.
+     */
     void testRun_NaturalTermination() throws Exception {
         // Forcefully set completed processes count to match total length
         injectMock("completedProcesses", 1);
@@ -323,6 +378,10 @@ public class SimulationEngineTest {
      */
     @Test
     @DisplayName("Coverage: Safety Timeout loop termination")
+    /**
+     * Confirms the safety timeout mechanism stops the simulation after
+     * a large number of ticks and logs the forced stop message.
+     */
     void testRunTimeout() {
         engine.run();
         verify(mockListener, atLeastOnce()).onLogMessage(contains("Simulation was forcibly stopped"));

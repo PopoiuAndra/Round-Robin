@@ -4,8 +4,18 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.DisplayName;
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * Unit tests for {@link SimulationConfig}.
+ *
+ * These tests verify construction, getters and the {@code toString()}
+ * formatting of the {@code SimulationConfig} class.
+ */
 public class SimulationConfigTest {
 
+    /**
+     * Verifies that a {@code SimulationConfig} constructed with valid values
+     * returns the expected values from its getter methods.
+     */
     @Test
     @DisplayName("Test constructor and getters - Valid Data")
     public void testConfigCreation() {
@@ -18,6 +28,10 @@ public class SimulationConfigTest {
         assertEquals(5.0, config.getDiskTransferRate(), 0.001, "The disk rate should be 5.0");
     }
 
+    /**
+     * Ensures that {@code toString()} produces the expected, formatted
+     * representation of the configuration values.
+     */
     @Test
     @DisplayName("Test toString - Formatting Verification")
     public void testToString() {

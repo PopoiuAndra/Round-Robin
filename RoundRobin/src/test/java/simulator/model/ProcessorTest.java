@@ -5,10 +5,18 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * Unit tests for {@link Processor} ensuring correct assignment, eviction,
+ * time slice handling, and resilience when idle.
+ */
 public class ProcessorTest {
 
     @Test
     @DisplayName("Test construction: All fields should be initialized correctly with valid parameters")
+    /**
+     * Verifies a new {@code Processor} starts idle with no current process
+     * and an expired time slice (remaining = 0).
+     */
     void testInitialization_ShouldInitializeAllFieldsCorrectly() {
         Processor processor = new Processor(0);
 
@@ -20,6 +28,10 @@ public class ProcessorTest {
 
     @Test
     @DisplayName("Test assignment: Should update processor state, process state, and affinity correctly")
+    /**
+     * Ensures assigning a process updates processor and process state,
+     * sets affinity and resets idle/time-slice flags.
+     */
     void testAssignProcess_ShouldSetProcessAndUpdateStates() {
         Processor processor = new Processor(0);
         UserProcess process = new UserProcess(0, 1024, 0, new int[]{5});
@@ -35,6 +47,10 @@ public class ProcessorTest {
 
     @Test
     @DisplayName("Test safety: assignProcess should handle null process without crashing")
+    /**
+     * Confirms assigning a null process is handled safely and leaves the
+     * processor idle.
+     */
     void testAssignProcess_WithNull_ShouldHandleGracefully() {
         Processor processor = new Processor(0);
 
@@ -44,6 +60,10 @@ public class ProcessorTest {
 
     @Test
     @DisplayName("Test eviction: Should clear the processor and return the evicted process")
+    /**
+     * Verifies eviction returns the previously running process and clears
+     * processor state.
+     */
     void testEvictProcess_ShouldClearStateAndReturnProcess() {
         Processor processor = new Processor(0);
         UserProcess process = new UserProcess(0, 1024, 0, new int[]{5});
@@ -59,6 +79,10 @@ public class ProcessorTest {
 
     @Test
     @DisplayName("Test execution flow: Should delegate tick to the process and decrement time slice")
+    /**
+     * Tests that {@code executeTick} delegates to the process, advances
+     * bursts and decrements the time slice appropriately.
+     */
     void testExecuteTick_ShouldDecrementTimeSliceAndAdvanceProcess() {
         Processor processor = new Processor(0);
         UserProcess process = new UserProcess(0, 1024, 0, new int[]{2});
@@ -79,6 +103,10 @@ public class ProcessorTest {
 
     @Test
     @DisplayName("Test resilience: executeTick should not throw exceptions when processor is idle")
+    /**
+     * Ensures calling {@code executeTick} on an idle processor does not
+     * throw exceptions.
+     */
     void testExecuteTick_WhenIdle_ShouldNotThrowExceptions() {
         Processor processor = new Processor(0);
 
