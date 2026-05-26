@@ -16,6 +16,9 @@ class MemoryManagerTest {
 
     private SimulationEngine engineMock;
 
+    private static final int DEFAULT_RAM_SIZE = 1000;
+    private static final int DEFAULT_SWAP_RATE = 100;
+
     @BeforeEach
     void setUp() {
         engineMock = mock(SimulationEngine.class);
@@ -41,7 +44,7 @@ class MemoryManagerTest {
      * Verifies initial MemoryManager state: empty RAM and no swapping.
      */
     void testInitialization_ShouldBeEmpty() {
-        MemoryManager memManager = new MemoryManager(1000, 100);
+        MemoryManager memManager = new MemoryManager(DEFAULT_RAM_SIZE, DEFAULT_SWAP_RATE);
 
         assertFalse(memManager.isSwapping(), "MemoryManager should not be swapping initially.");
         assertNull(memManager.getSwappingProcess(), "Swapping process should be null initially.");
@@ -55,7 +58,7 @@ class MemoryManagerTest {
      * after loading a process into memory.
      */
     void testIsProcessInRam_ShouldReturnCorrectStatus() {
-        MemoryManager memManager = new MemoryManager(1000, 100);
+        MemoryManager memManager = new MemoryManager(DEFAULT_RAM_SIZE, DEFAULT_SWAP_RATE);
         Process p1 = createMockProcess(1, 200);
         Process p2 = createMockProcess(2, 200);
 
@@ -74,7 +77,7 @@ class MemoryManagerTest {
      * validating eviction choices.
      */
     void testMarkAsRecentlyUsed_ShouldProtectProcessFromEviction() {
-        MemoryManager memManager = new MemoryManager(1000, 100);
+        MemoryManager memManager = new MemoryManager(DEFAULT_RAM_SIZE, DEFAULT_SWAP_RATE);
 
         Process p1 = createMockProcess(1, 300);
         Process p2 = createMockProcess(2, 300);
@@ -85,7 +88,7 @@ class MemoryManagerTest {
         fullyLoadProcess(memManager, p2);
         fullyLoadProcess(memManager, p3);
 
-        // P2(0), P3(1), P1(2)
+        // Expected order before marking: P2 (LRU), P3, P1 (MRU)
         memManager.markAsRecentlyUsed(p1);
 
         // Edge case: Mark a process that is already at the end (should do nothing)
@@ -109,7 +112,7 @@ class MemoryManagerTest {
      * processes with zero memory requirement.
      */
     void testStartLoadingProcessToRam_TickCalculations() {
-        MemoryManager memManager = new MemoryManager(1000, 100);
+        MemoryManager memManager = new MemoryManager(DEFAULT_RAM_SIZE, DEFAULT_SWAP_RATE);
 
         // (250 / 100 = 2.5 -> ceil = 3 ticks)
         Process p1 = createMockProcess(1, 250);
@@ -133,7 +136,7 @@ class MemoryManagerTest {
      * Ensures eviction logic handles empty RAM without throwing.
      */
     void testEvictLeastRecentlyUsed_WithEmptyRam_ShouldReturnSafely() {
-        MemoryManager memManager = new MemoryManager(1000, 100);
+        MemoryManager memManager = new MemoryManager(DEFAULT_RAM_SIZE, DEFAULT_SWAP_RATE);
 
         // Calling eviction when RAM is completely empty
         assertDoesNotThrow(() -> memManager.evictLeastRecentlyUsed(1, engineMock),
